@@ -1,0 +1,219 @@
+definitions:
+  example.ExampleForm:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      username:
+        type: string
+    required:
+    - email
+    - name
+    - username
+    type: object
+  user.UserForm:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - email
+    - name
+    - password
+    - username
+    type: object
+info:
+  contact: {}
+paths:
+  /check-connection:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses: {}
+  /example:
+    get:
+      consumes:
+      - application/json
+      description: Get All Example
+      parameters:
+      - description: ID in Array
+        in: query
+        name: id
+        type: array
+      - description: Filter by Name
+        in: query
+        name: name
+        type: string
+      - description: Filter by Username
+        in: query
+        name: username
+        type: string
+      - description: Filter by Email
+        in: query
+        name: email
+        type: string
+      - description: Limit of pagination
+        in: query
+        name: limit
+        type: integer
+      - description: Page of pagination
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: Get All Example
+      tags:
+      - Example
+    post:
+      consumes:
+      - application/json
+      description: Create Example
+      parameters:
+      - description: Payload Body for Create [RAW]
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/example.ExampleForm'
+      produces:
+      - application/json
+      responses: {}
+      summary: Create Example
+      tags:
+      - Example
+  /example/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete Example by ID
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Delete Example
+      tags:
+      - Example
+    get:
+      consumes:
+      - application/json
+      description: Get Detail Example by ID
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Get Detail Example
+      tags:
+      - Example
+    put:
+      consumes:
+      - application/json
+      description: Update Example
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Payload Body for Update [RAW]
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/example.ExampleForm'
+      produces:
+      - application/json
+      responses: {}
+      summary: Update Example
+      tags:
+      - Example
+  /user:
+    get:
+      consumes:
+      - application/json
+      description: Get All Example
+      parameters:
+      - description: ID in Array
+        in: query
+        name: id
+        type: array
+      - description: Filter by Name
+        in: query
+        name: name
+        type: string
+      - description: Filter by Username
+        in: query
+        name: username
+        type: string
+      - description: Filter by Email
+        in: query
+        name: email
+        type: string
+      - description: Limit of pagination
+        in: query
+        name: limit
+        type: integer
+      - description: Page of pagination
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: Get All Users
+      tags:
+      - User
+    post:
+      consumes:
+      - application/json
+      description: Create User
+      parameters:
+      - description: Payload Body for Create [RAW]
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.UserForm'
+      produces:
+      - application/json
+      responses: {}
+      summary: Create User
+      tags:
+      - User
+  /user/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get Detail User by ID
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Get Detail User
+      tags:
+      - User
+swagger: "2.0"
