@@ -1,7 +1,3 @@
-# Thrive-Track
-
-Whether you're seeking to understand your mental health better or track improvements over time, ThriveTrack is designed to support your journey toward a healthier, happier you.
-
 # How to Add Schema or Create Table Database :
 
 - cmd: cd database
