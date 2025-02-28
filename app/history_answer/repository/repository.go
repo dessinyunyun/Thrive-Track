@@ -24,12 +24,11 @@ func (r *Repository) GetAll(ctx context.Context, pagination *tools.Pagination, f
 	// Tambahkan kondisi filter jika ada
 	if filter != nil {
 		if filter.FormResponseId != 0 {
-			// formResponseID, err := strconv.Atoi(filter.FormResponseId)
-
 			query = query.Where(entHistoryResponse.FormResponseIDEQ(filter.FormResponseId))
-
 		}
-
+		if filter.QuestionId != 0 {
+			query = query.Where(entHistoryResponse.QuestionIDEQ(filter.QuestionId))
+		}
 		if filter.QuestionId != 0 {
 			query = query.Where(entHistoryResponse.QuestionIDEQ(filter.QuestionId))
 		}

@@ -39,12 +39,21 @@ type FilterUser struct {
 	Email    string          `json:"email" form:"email"`
 }
 
+type IdentifierForm struct {
+	Identifier string `form:"identifier" binding:"required"`
+}
+
+type IdentifierResponse struct {
+	Identifier string `json:"identifier" binding:"required"`
+}
+
 type UserUsecase interface {
 	GetAllUser(c *gin.Context) ([]*UserResponse, *tools.Pagination, error)
 	GetDetailUser(c *gin.Context) (*UserResponse, error)
 	CreateUser(c *gin.Context) error
 	UpdateUser(c *gin.Context) error
 	DeleteUser(c *gin.Context) error
+	CheckUserIdentifier(c *gin.Context) (*IdentifierResponse, error)
 }
 
 type UserRepository interface {

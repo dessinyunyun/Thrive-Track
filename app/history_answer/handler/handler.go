@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"go-gin/app/history_answer"
 	"go-gin/app/tools"
 	"net/http"
@@ -38,7 +37,6 @@ func (h *Handler) GetAll(c *gin.Context) {
 		})
 		return
 	}
-	fmt.Println("tse", filter)
 
 	result, pagination, err := h.uc.GetAll(c, &filter)
 	if err != nil {

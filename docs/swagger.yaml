@@ -1,4 +1,30 @@
 definitions:
+  auth.LoginForm:
+    properties:
+      identifier:
+        type: string
+      password:
+        type: string
+    required:
+    - identifier
+    - password
+    type: object
+  auth.RegisterForm:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - email
+    - name
+    - password
+    - username
+    type: object
   example.ExampleForm:
     properties:
       email:
@@ -31,6 +57,42 @@ definitions:
 info:
   contact: {}
 paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Login
+      parameters:
+      - description: Payload Body for Login [RAW]
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.LoginForm'
+      produces:
+      - application/json
+      responses: {}
+      summary: Login
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register
+      parameters:
+      - description: Payload Body for Register [RAW]
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.RegisterForm'
+      produces:
+      - application/json
+      responses: {}
+      summary: Register
+      tags:
+      - Auth
   /check-connection:
     get:
       consumes:
@@ -200,6 +262,22 @@ paths:
       tags:
       - User
   /user/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete User by ID
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Delete User
+      tags:
+      - User
     get:
       consumes:
       - application/json
@@ -214,6 +292,44 @@ paths:
       - application/json
       responses: {}
       summary: Get Detail User
+      tags:
+      - User
+    put:
+      consumes:
+      - application/json
+      description: Update User
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Payload Body for Update [RAW]
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/user.UserForm'
+      produces:
+      - application/json
+      responses: {}
+      summary: Update User
+      tags:
+      - User
+  /user/check-identifier:
+    get:
+      consumes:
+      - application/json
+      description: Check Identifier Available
+      parameters:
+      - description: Identifier
+        in: query
+        name: identifier
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Check Identifier Available
       tags:
       - User
 swagger: "2.0"

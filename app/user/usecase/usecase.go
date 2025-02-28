@@ -2,6 +2,8 @@ package usecase
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"go-gin/app/tools"
 	"go-gin/app/user"
 
@@ -49,6 +51,31 @@ func (uc *UserUsecase) GetDetailUser(c *gin.Context) (*user.UserResponse, error)
 	result, err := uc.repo.GetDetailUser(uc.ctx, uuid)
 	if err != nil {
 		return nil, err
+	}
+
+	return result, nil
+}
+
+func (uc *UserUsecase) CheckUserIdentifier(c *gin.Context) (*user.IdentifierResponse, error) {
+	// identifier := c.Param("identifier")
+
+	identifierForm := new(user.IdentifierForm)
+	if err := c.ShouldBindQuery(identifierForm); err != nil {
+		return nil, err
+	}
+	fmt.Println("identifier", identifierForm)
+	checkUserIdentifier, err := uc.repo.CheckUserIdentifier(uc.ctx, identifierForm.Identifier)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("checkUserIdentifier", checkUserIdentifier)
+	if checkUserIdentifier != nil {
+		return nil, errors.New("username or email is already taken")
+	}
+
+	result := &user.IdentifierResponse{
+		Identifier: "username/email available",
 	}
 
 	return result, nil

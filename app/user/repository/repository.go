@@ -108,6 +108,7 @@ func (r *UserRepository) CreateUser(ctx context.Context, form *user.UserForm) er
 		SetPassword(form.Password).
 		Save(ctx)
 	if err != nil {
+
 		tx.Rollback()
 		return err
 	}

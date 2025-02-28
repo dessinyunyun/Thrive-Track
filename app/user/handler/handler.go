@@ -24,6 +24,7 @@ func UserRoute(uc user.UserUsecase, r *gin.RouterGroup, log *logrus.Entry) {
 
 	v2.GET("", h.GetAllUser)
 	v2.GET("/:id", h.GetDetailUser)
+	v2.GET("/check-identifier", h.CheckUserIdentifier)
 	v2.POST("", h.CreateUser)
 	v2.PUT("/:id", h.UpdateUser)
 	v2.DELETE("/:id", h.DeleteUser)
@@ -80,6 +81,30 @@ func (h *UserHandler) GetDetailUser(c *gin.Context) {
 		Data:    result,
 		Status:  "success",
 		Message: "Get Detail User",
+	})
+}
+
+// @Tags User
+// @Summary Check Identifier Availability
+// @Description Check if the identifier (username or email) is available
+// @Router /user/check-identifier [get]
+// @Accept json
+// @Produce json
+// @Param identifier query string true "Identifier (username or email)"
+func (h *UserHandler) CheckUserIdentifier(c *gin.Context) {
+	result, err := h.uc.CheckUserIdentifier(c)
+	if err != nil {
+		h.log.Errorf("check identifier user handlers: %v", err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"message": err,
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, tools.Response{
+		Data:    result,
+		Status:  "success",
+		Message: "Check Identifier Available",
 	})
 }
 

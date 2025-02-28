@@ -28,19 +28,19 @@ func AuthRoute(uc auth.AuthUsecase, r *gin.RouterGroup, log *logrus.Entry) {
 	// v2.DELETE("/:id", h.DeleteUser)
 }
 
-// @Tags Example
-// @Summary Create Example
-// @Description Create Example
-// @Router /example [post]
+// @Tags Auth
+// @Summary Register
+// @Description Register
+// @Router /auth/register [post]
 // @Accept json
 // @Produce json
-// @Param request body example.ExampleForm true "Payload Body for Create [RAW]"
+// @Param request body auth.RegisterForm true "Payload Body for Register [RAW]"
 func (h *AuthHandler) Register(c *gin.Context) {
 	err := h.uc.Register(c)
 	if err != nil {
 		h.log.Errorf("create User handlers: %v", err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"message": err,
+			"message": err.Error(),
 		})
 		return
 	}
@@ -51,6 +51,13 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	})
 }
 
+// @Tags Auth
+// @Summary Login
+// @Description Login
+// @Router /auth/login [post]
+// @Accept json
+// @Produce json
+// @Param request body auth.LoginForm true "Payload Body for Login [RAW]"
 func (h *AuthHandler) Login(c *gin.Context) {
 
 	result, err := h.uc.Login(c)
