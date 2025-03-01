@@ -1,3 +1,8 @@
+# How to running :
+
+- in root project
+- cmd: go run .
+
 # How to Add Schema or Create Table Database :
 
 - cmd: cd database

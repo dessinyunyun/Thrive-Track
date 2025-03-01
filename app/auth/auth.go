@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"errors"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gofrs/uuid"
 )
@@ -14,8 +16,9 @@ type RegisterForm struct {
 }
 
 type LoginForm struct {
-	Identifier string `json:"identifier" binding:"required"`
-	Password   string `json:"password" binding:"required"`
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Password string `json:"password" binding:"required"`
 }
 
 type LoginResponse struct {
@@ -37,3 +40,13 @@ type AuthUsecase interface {
 	// UpdateExample(c *gin.Context) error
 	// DeleteExample(c *gin.Context) error
 }
+
+var (
+	ErrIdentityNotFound = errors.New("Email or Username not found. Please register")
+	ErrWrongPassword    = errors.New("Authentication failed: wrong password")
+
+	ErrEmailAlreadyExist    = errors.New("Email already exist")
+	ErrUsernameAlreadyExist = errors.New("Username already exist")
+
+	ErrEmailandUsernameAlreadyExist = errors.New("Email and Username already exist")
+)

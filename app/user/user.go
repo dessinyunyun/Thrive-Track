@@ -53,13 +53,13 @@ type UserUsecase interface {
 	CreateUser(c *gin.Context) error
 	UpdateUser(c *gin.Context) error
 	DeleteUser(c *gin.Context) error
-	CheckUserIdentifier(c *gin.Context) (*IdentifierResponse, error)
 }
 
 type UserRepository interface {
 	GetAllUser(ctx context.Context, pagination *tools.Pagination, filter *FilterUser) ([]*UserResponse, *tools.Pagination, error)
 	GetDetailUser(ctx context.Context, ID googleUUID.UUID) (*UserResponse, error)
-	CheckUserIdentifier(ctx context.Context, identifier string) (*UserResponseSensitiveCase, error)
+	CheckEmailAndUsernameExist(ctx context.Context, email, username *string) (*UserResponseSensitiveCase, error)
+	// CheckEmailAndUsernameExist(ctx context.Context, email, username string) (emailExists bool, usernameExists bool, err error)
 	CreateUser(ctx context.Context, form *UserForm) error
 	UpdateUser(ctx context.Context, form *UserForm) error
 	DeleteUser(ctx context.Context, ID googleUUID.UUID) error

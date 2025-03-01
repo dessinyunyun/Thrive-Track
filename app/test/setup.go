@@ -12,10 +12,10 @@ import (
 
 func init() {
 	os.Setenv("DB_USER_TEST", "root")
-	os.Setenv("DB_PASS_TEST", "")
+	os.Setenv("DB_PASS_TEST", "root")
 	os.Setenv("DB_HOST_TEST", "localhost")
 	os.Setenv("DB_PORT_TEST", "3306")
-	os.Setenv("DB_NAME_TEST", "example")
+	os.Setenv("DB_NAME_TEST", "thrive_track_test")
 }
 
 type HandlerTesting struct {

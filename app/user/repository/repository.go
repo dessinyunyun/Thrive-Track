@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"go-gin/app/tools"
 	"go-gin/app/user"
 	"go-gin/database/ent"
@@ -71,12 +72,12 @@ func (r *UserRepository) GetDetailUser(ctx context.Context, ID googleUUID.UUID) 
 	}, nil
 }
 
-func (r *UserRepository) CheckUserIdentifier(ctx context.Context, identifier string) (*user.UserResponseSensitiveCase, error) {
+func (r *UserRepository) CheckEmailAndUsernameExist(ctx context.Context, email, username *string) (*user.UserResponseSensitiveCase, error) {
 	userQuery := r.db.User.Query().
 		Where(
 			entUser.Or(
-				entUser.UsernameEQ(identifier),
-				entUser.EmailEQ(identifier),
+				entUser.UsernameEqualFold(*username),
+				entUser.EmailEqualFold(*email),
 			),
 		)
 
@@ -108,7 +109,8 @@ func (r *UserRepository) CreateUser(ctx context.Context, form *user.UserForm) er
 		SetPassword(form.Password).
 		Save(ctx)
 	if err != nil {
-
+		fmt.Println("errerr.Error(): ", err.Error())
+		fmt.Println("err: ")
 		tx.Rollback()
 		return err
 	}
