@@ -15,6 +15,33 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/auth/activated-client": {
+            "patch": {
+                "description": "ActivatedClient with token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "ActivatedClient",
+                "parameters": [
+                    {
+                        "description": "Payload Body for Patch [RAW]",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/auth.ActivatedTokenForm"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/auth/login": {
             "post": {
                 "description": "Login",
@@ -36,6 +63,33 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/auth.LoginForm"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/auth/refresh-token": {
+            "patch": {
+                "description": "RefreshToken",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "RefreshToken",
+                "parameters": [
+                    {
+                        "description": "Payload Body for RefreshToken [RAW]",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/auth.RefreshTokenForm"
                         }
                     }
                 ],
@@ -254,6 +308,13 @@ const docTemplate = `{
                 "summary": "Get All Users",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "Bearer Token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
                         "type": "array",
                         "description": "ID in Array",
                         "name": "id",
@@ -313,30 +374,6 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/user.UserForm"
                         }
-                    }
-                ],
-                "responses": {}
-            }
-        },
-        "/user/check-identifier": {
-            "get": {
-                "description": "Check Identifier Available",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "User"
-                ],
-                "summary": "Check Identifier Available",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Identifier",
-                        "name": "identifier",
-                        "in": "query"
                     }
                 ],
                 "responses": {}
@@ -424,17 +461,38 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "auth.ActivatedTokenForm": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
         "auth.LoginForm": {
             "type": "object",
             "required": [
-                "identifier",
                 "password"
             ],
             "properties": {
-                "identifier": {
+                "email": {
                     "type": "string"
                 },
                 "password": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "auth.RefreshTokenForm": {
+            "type": "object",
+            "required": [
+                "refresh_token"
+            ],
+            "properties": {
+                "refresh_token": {
                     "type": "string"
                 }
             }

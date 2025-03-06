@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"go-gin/app/tools"
+	"go-gin/database/ent"
 
 	"github.com/gin-gonic/gin"
 
@@ -49,7 +50,7 @@ type IdentifierResponse struct {
 
 type UserUsecase interface {
 	GetAllUser(c *gin.Context) ([]*UserResponse, *tools.Pagination, error)
-	GetDetailUser(c *gin.Context) (*UserResponse, error)
+	GetDetailUser(c *gin.Context) (*ent.User, error)
 	CreateUser(c *gin.Context) error
 	UpdateUser(c *gin.Context) error
 	DeleteUser(c *gin.Context) error
@@ -57,10 +58,11 @@ type UserUsecase interface {
 
 type UserRepository interface {
 	GetAllUser(ctx context.Context, pagination *tools.Pagination, filter *FilterUser) ([]*UserResponse, *tools.Pagination, error)
-	GetDetailUser(ctx context.Context, ID googleUUID.UUID) (*UserResponse, error)
-	CheckEmailAndUsernameExist(ctx context.Context, email, username *string) (*UserResponseSensitiveCase, error)
+	GetDetailUser(ctx context.Context, ID googleUUID.UUID) (*ent.User, error)
+	CheckEmailAndUsernameExist(ctx context.Context, email, username *string) (*ent.User, error)
 	// CheckEmailAndUsernameExist(ctx context.Context, email, username string) (emailExists bool, usernameExists bool, err error)
-	CreateUser(ctx context.Context, form *UserForm) error
+	CreateUser(ctx context.Context, form *UserForm) (*ent.User, error)
 	UpdateUser(ctx context.Context, form *UserForm) error
+	ActivatedUser(ctx context.Context, userID googleUUID.UUID) error
 	DeleteUser(ctx context.Context, ID googleUUID.UUID) error
 }

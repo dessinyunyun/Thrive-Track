@@ -25,6 +25,7 @@ func (User) Fields() []ent.Field {
 			Sensitive(). // Menandai bahwa ini adalah field sensitif
 			NotEmpty().
 			MaxLen(255),
+		field.Bool("active").Default(false),
 	}
 }
 
@@ -32,13 +33,15 @@ func (User) Fields() []ent.Field {
 func (User) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("form_responses", Form_Response.Type),
+		edge.To("activation_tokens", Activation_token.Type).Unique(),
+		edge.To("sessions", Session.Type).Unique(),
 	}
 }
 
 // Add created_at, updated_at, and deleted_at
-func (User) Mixin() []ent.Mixin {
-	return []ent.Mixin{
-		TimeMixin{},
-		DeleteMixin{},
-	}
-}
+// func (User) Mixin() []ent.Mixin {
+// 	return []ent.Mixin{
+// 		TimeMixin{},
+// 		DeleteMixin{},
+// 	}
+// }

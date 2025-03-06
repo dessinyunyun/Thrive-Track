@@ -12,6 +12,8 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
+	// Activation_token is the client for interacting with the Activation_token builders.
+	Activation_token *ActivationTokenClient
 	// Category_Questions is the client for interacting with the Category_Questions builders.
 	Category_Questions *CategoryQuestionsClient
 	// Example is the client for interacting with the Example builders.
@@ -22,6 +24,8 @@ type Tx struct {
 	History_Answer *HistoryAnswerClient
 	// Questions is the client for interacting with the Questions builders.
 	Questions *QuestionsClient
+	// Session is the client for interacting with the Session builders.
+	Session *SessionClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 
@@ -155,11 +159,13 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
+	tx.Activation_token = NewActivationTokenClient(tx.config)
 	tx.Category_Questions = NewCategoryQuestionsClient(tx.config)
 	tx.Example = NewExampleClient(tx.config)
 	tx.Form_Response = NewFormResponseClient(tx.config)
 	tx.History_Answer = NewHistoryAnswerClient(tx.config)
 	tx.Questions = NewQuestionsClient(tx.config)
+	tx.Session = NewSessionClient(tx.config)
 	tx.User = NewUserClient(tx.config)
 }
 
@@ -170,7 +176,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: Category_Questions.QueryXXX(), the query will be executed
+// applies a query, for example: Activation_token.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

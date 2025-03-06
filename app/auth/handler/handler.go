@@ -1,13 +1,11 @@
 package handler
 
 import (
-	"errors"
 	"go-gin/app/auth"
 	"go-gin/app/tools"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 	"github.com/sirupsen/logrus"
 )
 
@@ -22,12 +20,12 @@ func AuthRoute(uc auth.AuthUsecase, r *gin.RouterGroup, log *logrus.Entry) {
 		log: log,
 	}
 
-	v2 := r.Group("auth")
+	v1 := r.Group("auth")
 
-	v2.POST("/register", h.Register)
-	v2.POST("/login", h.Login)
-	// v2.PUT("/:id", h.UpdateUser)
-	// v2.DELETE("/:id", h.DeleteUser)
+	v1.POST("/register", h.Register)
+	v1.POST("/login", h.Login)
+	v1.PATCH("/refresh-token", h.RefreshToken)
+	v1.PATCH("/activated-client", h.ActivatedClient)
 }
 
 // @Tags Auth
@@ -40,20 +38,7 @@ func AuthRoute(uc auth.AuthUsecase, r *gin.RouterGroup, log *logrus.Entry) {
 func (h *AuthHandler) Register(c *gin.Context) {
 	err := h.uc.Register(c)
 	if err != nil {
-
-		if errors.Is(err, auth.ErrEmailandUsernameAlreadyExist) || errors.Is(err, auth.ErrEmailAlreadyExist) || errors.Is(err, auth.ErrUsernameAlreadyExist) {
-			c.AbortWithStatusJSON(http.StatusBadRequest, tools.Response{
-				Status:  "error",
-				Message: err.Error(),
-			})
-			return
-		}
-
-		h.log.Errorf("create User handlers: %v", err)
-		c.AbortWithStatusJSON(http.StatusInternalServerError, tools.Response{
-			Status:  "error",
-			Message: err.Error(),
-		})
+		auth.ErrorHandler(c, h.log, err)
 		return
 	}
 
@@ -73,33 +58,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 func (h *AuthHandler) Login(c *gin.Context) {
 	result, err := h.uc.Login(c)
 	if err != nil {
-		if validationErrors, ok := err.(validator.ValidationErrors); ok {
-			validationErr := tools.ValidationErrors(validationErrors)
-			c.AbortWithStatusJSON(http.StatusBadRequest, tools.Response{
-				Status:  "error",
-				Message: "Validation error",
-				Data:    validationErr,
-			})
-			return
-		} else if errors.Is(err, auth.ErrIdentityNotFound) {
-			c.AbortWithStatusJSON(http.StatusNotFound, tools.Response{
-				Status:  "error",
-				Message: err.Error(),
-			})
-			return
-		} else if errors.Is(err, auth.ErrWrongPassword) {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, tools.Response{
-				Status:  "error",
-				Message: err.Error(),
-			})
-			return
-		}
-
-		h.log.Errorf("Login handlers err: %v", err)
-		c.AbortWithStatusJSON(http.StatusInternalServerError, tools.Response{
-			Status:  "error",
-			Message: err.Error(),
-		})
+		auth.ErrorHandler(c, h.log, err)
 		return
 	}
 
@@ -107,5 +66,46 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		Status:  "success",
 		Message: "success login",
 		Data:    result,
+	})
+}
+
+// @Tags Auth
+// @Summary RefreshToken
+// @Description RefreshToken
+// @Router /auth/refresh-token [patch]
+// @Accept json
+// @Produce json
+// @Param request body auth.RefreshTokenForm true "Payload Body for RefreshToken [RAW]"
+func (h *AuthHandler) RefreshToken(c *gin.Context) {
+	result, err := h.uc.RefreshToken(c)
+	if err != nil {
+		auth.ErrorHandler(c, h.log, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, tools.Response{
+		Status:  "success",
+		Message: "success refresh token",
+		Data:    result,
+	})
+}
+
+// @Tags Auth
+// @Summary ActivatedClient
+// @Description ActivatedClient with token
+// @Router /auth/activated-client [patch]
+// @Accept json
+// @Produce json
+// @Param request body auth.ActivatedTokenForm true "Payload Body for Patch [RAW]"
+func (h *AuthHandler) ActivatedClient(c *gin.Context) {
+	err := h.uc.ActivateUser(c)
+	if err != nil {
+		auth.ErrorHandler(c, h.log, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, tools.Response{
+		Status:  "success",
+		Message: "success activated",
 	})
 }

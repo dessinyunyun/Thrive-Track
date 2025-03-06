@@ -185,10 +185,10 @@ func (hau *HistoryAnswerUpdate) check() error {
 			return &ValidationError{Name: "answer", err: fmt.Errorf(`ent: validator failed for field "History_Answer.answer": %w`, err)}
 		}
 	}
-	if _, ok := hau.mutation.FormResponseID(); hau.mutation.FormResponseCleared() && !ok {
+	if hau.mutation.FormResponseCleared() && len(hau.mutation.FormResponseIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "History_Answer.form_response"`)
 	}
-	if _, ok := hau.mutation.QuestionID(); hau.mutation.QuestionCleared() && !ok {
+	if hau.mutation.QuestionCleared() && len(hau.mutation.QuestionIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "History_Answer.question"`)
 	}
 	return nil
@@ -467,10 +467,10 @@ func (hauo *HistoryAnswerUpdateOne) check() error {
 			return &ValidationError{Name: "answer", err: fmt.Errorf(`ent: validator failed for field "History_Answer.answer": %w`, err)}
 		}
 	}
-	if _, ok := hauo.mutation.FormResponseID(); hauo.mutation.FormResponseCleared() && !ok {
+	if hauo.mutation.FormResponseCleared() && len(hauo.mutation.FormResponseIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "History_Answer.form_response"`)
 	}
-	if _, ok := hauo.mutation.QuestionID(); hauo.mutation.QuestionCleared() && !ok {
+	if hauo.mutation.QuestionCleared() && len(hauo.mutation.QuestionIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "History_Answer.question"`)
 	}
 	return nil

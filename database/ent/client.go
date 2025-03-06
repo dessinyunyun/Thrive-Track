@@ -11,11 +11,13 @@ import (
 
 	"go-gin/database/ent/migrate"
 
+	"go-gin/database/ent/activation_token"
 	"go-gin/database/ent/category_questions"
 	"go-gin/database/ent/example"
 	"go-gin/database/ent/form_response"
 	"go-gin/database/ent/history_answer"
 	"go-gin/database/ent/questions"
+	"go-gin/database/ent/session"
 	"go-gin/database/ent/user"
 
 	"entgo.io/ent"
@@ -30,6 +32,8 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// Activation_token is the client for interacting with the Activation_token builders.
+	Activation_token *ActivationTokenClient
 	// Category_Questions is the client for interacting with the Category_Questions builders.
 	Category_Questions *CategoryQuestionsClient
 	// Example is the client for interacting with the Example builders.
@@ -40,6 +44,8 @@ type Client struct {
 	History_Answer *HistoryAnswerClient
 	// Questions is the client for interacting with the Questions builders.
 	Questions *QuestionsClient
+	// Session is the client for interacting with the Session builders.
+	Session *SessionClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 }
@@ -53,11 +59,13 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.Activation_token = NewActivationTokenClient(c.config)
 	c.Category_Questions = NewCategoryQuestionsClient(c.config)
 	c.Example = NewExampleClient(c.config)
 	c.Form_Response = NewFormResponseClient(c.config)
 	c.History_Answer = NewHistoryAnswerClient(c.config)
 	c.Questions = NewQuestionsClient(c.config)
+	c.Session = NewSessionClient(c.config)
 	c.User = NewUserClient(c.config)
 }
 
@@ -151,11 +159,13 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	return &Tx{
 		ctx:                ctx,
 		config:             cfg,
+		Activation_token:   NewActivationTokenClient(cfg),
 		Category_Questions: NewCategoryQuestionsClient(cfg),
 		Example:            NewExampleClient(cfg),
 		Form_Response:      NewFormResponseClient(cfg),
 		History_Answer:     NewHistoryAnswerClient(cfg),
 		Questions:          NewQuestionsClient(cfg),
+		Session:            NewSessionClient(cfg),
 		User:               NewUserClient(cfg),
 	}, nil
 }
@@ -176,11 +186,13 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	return &Tx{
 		ctx:                ctx,
 		config:             cfg,
+		Activation_token:   NewActivationTokenClient(cfg),
 		Category_Questions: NewCategoryQuestionsClient(cfg),
 		Example:            NewExampleClient(cfg),
 		Form_Response:      NewFormResponseClient(cfg),
 		History_Answer:     NewHistoryAnswerClient(cfg),
 		Questions:          NewQuestionsClient(cfg),
+		Session:            NewSessionClient(cfg),
 		User:               NewUserClient(cfg),
 	}, nil
 }
@@ -188,7 +200,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		Category_Questions.
+//		Activation_token.
 //		Query().
 //		Count(ctx)
 func (c *Client) Debug() *Client {
@@ -211,8 +223,8 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Category_Questions, c.Example, c.Form_Response, c.History_Answer, c.Questions,
-		c.User,
+		c.Activation_token, c.Category_Questions, c.Example, c.Form_Response,
+		c.History_Answer, c.Questions, c.Session, c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -222,8 +234,8 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Category_Questions, c.Example, c.Form_Response, c.History_Answer, c.Questions,
-		c.User,
+		c.Activation_token, c.Category_Questions, c.Example, c.Form_Response,
+		c.History_Answer, c.Questions, c.Session, c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -232,6 +244,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 // Mutate implements the ent.Mutator interface.
 func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
+	case *ActivationTokenMutation:
+		return c.Activation_token.mutate(ctx, m)
 	case *CategoryQuestionsMutation:
 		return c.Category_Questions.mutate(ctx, m)
 	case *ExampleMutation:
@@ -242,10 +256,161 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.History_Answer.mutate(ctx, m)
 	case *QuestionsMutation:
 		return c.Questions.mutate(ctx, m)
+	case *SessionMutation:
+		return c.Session.mutate(ctx, m)
 	case *UserMutation:
 		return c.User.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
+	}
+}
+
+// ActivationTokenClient is a client for the Activation_token schema.
+type ActivationTokenClient struct {
+	config
+}
+
+// NewActivationTokenClient returns a client for the Activation_token from the given config.
+func NewActivationTokenClient(c config) *ActivationTokenClient {
+	return &ActivationTokenClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `activation_token.Hooks(f(g(h())))`.
+func (c *ActivationTokenClient) Use(hooks ...Hook) {
+	c.hooks.Activation_token = append(c.hooks.Activation_token, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `activation_token.Intercept(f(g(h())))`.
+func (c *ActivationTokenClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Activation_token = append(c.inters.Activation_token, interceptors...)
+}
+
+// Create returns a builder for creating a Activation_token entity.
+func (c *ActivationTokenClient) Create() *ActivationTokenCreate {
+	mutation := newActivationTokenMutation(c.config, OpCreate)
+	return &ActivationTokenCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Activation_token entities.
+func (c *ActivationTokenClient) CreateBulk(builders ...*ActivationTokenCreate) *ActivationTokenCreateBulk {
+	return &ActivationTokenCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *ActivationTokenClient) MapCreateBulk(slice any, setFunc func(*ActivationTokenCreate, int)) *ActivationTokenCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &ActivationTokenCreateBulk{err: fmt.Errorf("calling to ActivationTokenClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*ActivationTokenCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &ActivationTokenCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Activation_token.
+func (c *ActivationTokenClient) Update() *ActivationTokenUpdate {
+	mutation := newActivationTokenMutation(c.config, OpUpdate)
+	return &ActivationTokenUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ActivationTokenClient) UpdateOne(at *Activation_token) *ActivationTokenUpdateOne {
+	mutation := newActivationTokenMutation(c.config, OpUpdateOne, withActivation_token(at))
+	return &ActivationTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ActivationTokenClient) UpdateOneID(id uuid.UUID) *ActivationTokenUpdateOne {
+	mutation := newActivationTokenMutation(c.config, OpUpdateOne, withActivation_tokenID(id))
+	return &ActivationTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Activation_token.
+func (c *ActivationTokenClient) Delete() *ActivationTokenDelete {
+	mutation := newActivationTokenMutation(c.config, OpDelete)
+	return &ActivationTokenDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ActivationTokenClient) DeleteOne(at *Activation_token) *ActivationTokenDeleteOne {
+	return c.DeleteOneID(at.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ActivationTokenClient) DeleteOneID(id uuid.UUID) *ActivationTokenDeleteOne {
+	builder := c.Delete().Where(activation_token.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ActivationTokenDeleteOne{builder}
+}
+
+// Query returns a query builder for Activation_token.
+func (c *ActivationTokenClient) Query() *ActivationTokenQuery {
+	return &ActivationTokenQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeActivationToken},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Activation_token entity by its id.
+func (c *ActivationTokenClient) Get(ctx context.Context, id uuid.UUID) (*Activation_token, error) {
+	return c.Query().Where(activation_token.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ActivationTokenClient) GetX(ctx context.Context, id uuid.UUID) *Activation_token {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUser queries the user edge of a Activation_token.
+func (c *ActivationTokenClient) QueryUser(at *Activation_token) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := at.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(activation_token.Table, activation_token.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, activation_token.UserTable, activation_token.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(at.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ActivationTokenClient) Hooks() []Hook {
+	return c.hooks.Activation_token
+}
+
+// Interceptors returns the client interceptors.
+func (c *ActivationTokenClient) Interceptors() []Interceptor {
+	return c.inters.Activation_token
+}
+
+func (c *ActivationTokenClient) mutate(ctx context.Context, m *ActivationTokenMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ActivationTokenCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ActivationTokenUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ActivationTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ActivationTokenDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Activation_token mutation op: %q", m.Op())
 	}
 }
 
@@ -994,6 +1159,155 @@ func (c *QuestionsClient) mutate(ctx context.Context, m *QuestionsMutation) (Val
 	}
 }
 
+// SessionClient is a client for the Session schema.
+type SessionClient struct {
+	config
+}
+
+// NewSessionClient returns a client for the Session from the given config.
+func NewSessionClient(c config) *SessionClient {
+	return &SessionClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `session.Hooks(f(g(h())))`.
+func (c *SessionClient) Use(hooks ...Hook) {
+	c.hooks.Session = append(c.hooks.Session, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `session.Intercept(f(g(h())))`.
+func (c *SessionClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Session = append(c.inters.Session, interceptors...)
+}
+
+// Create returns a builder for creating a Session entity.
+func (c *SessionClient) Create() *SessionCreate {
+	mutation := newSessionMutation(c.config, OpCreate)
+	return &SessionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Session entities.
+func (c *SessionClient) CreateBulk(builders ...*SessionCreate) *SessionCreateBulk {
+	return &SessionCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *SessionClient) MapCreateBulk(slice any, setFunc func(*SessionCreate, int)) *SessionCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &SessionCreateBulk{err: fmt.Errorf("calling to SessionClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*SessionCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &SessionCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Session.
+func (c *SessionClient) Update() *SessionUpdate {
+	mutation := newSessionMutation(c.config, OpUpdate)
+	return &SessionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *SessionClient) UpdateOne(s *Session) *SessionUpdateOne {
+	mutation := newSessionMutation(c.config, OpUpdateOne, withSession(s))
+	return &SessionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *SessionClient) UpdateOneID(id uuid.UUID) *SessionUpdateOne {
+	mutation := newSessionMutation(c.config, OpUpdateOne, withSessionID(id))
+	return &SessionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Session.
+func (c *SessionClient) Delete() *SessionDelete {
+	mutation := newSessionMutation(c.config, OpDelete)
+	return &SessionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *SessionClient) DeleteOne(s *Session) *SessionDeleteOne {
+	return c.DeleteOneID(s.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *SessionClient) DeleteOneID(id uuid.UUID) *SessionDeleteOne {
+	builder := c.Delete().Where(session.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &SessionDeleteOne{builder}
+}
+
+// Query returns a query builder for Session.
+func (c *SessionClient) Query() *SessionQuery {
+	return &SessionQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeSession},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Session entity by its id.
+func (c *SessionClient) Get(ctx context.Context, id uuid.UUID) (*Session, error) {
+	return c.Query().Where(session.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *SessionClient) GetX(ctx context.Context, id uuid.UUID) *Session {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUser queries the user edge of a Session.
+func (c *SessionClient) QueryUser(s *Session) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := s.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(session.Table, session.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, session.UserTable, session.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *SessionClient) Hooks() []Hook {
+	return c.hooks.Session
+}
+
+// Interceptors returns the client interceptors.
+func (c *SessionClient) Interceptors() []Interceptor {
+	return c.inters.Session
+}
+
+func (c *SessionClient) mutate(ctx context.Context, m *SessionMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&SessionCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&SessionUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&SessionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&SessionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Session mutation op: %q", m.Op())
+	}
+}
+
 // UserClient is a client for the User schema.
 type UserClient struct {
 	config
@@ -1118,6 +1432,38 @@ func (c *UserClient) QueryFormResponses(u *User) *FormResponseQuery {
 	return query
 }
 
+// QueryActivationTokens queries the activation_tokens edge of a User.
+func (c *UserClient) QueryActivationTokens(u *User) *ActivationTokenQuery {
+	query := (&ActivationTokenClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(activation_token.Table, activation_token.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, user.ActivationTokensTable, user.ActivationTokensColumn),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QuerySessions queries the sessions edge of a User.
+func (c *UserClient) QuerySessions(u *User) *SessionQuery {
+	query := (&SessionClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(session.Table, session.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, user.SessionsTable, user.SessionsColumn),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *UserClient) Hooks() []Hook {
 	return c.hooks.User
@@ -1146,11 +1492,11 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Category_Questions, Example, Form_Response, History_Answer, Questions,
-		User []ent.Hook
+		Activation_token, Category_Questions, Example, Form_Response, History_Answer,
+		Questions, Session, User []ent.Hook
 	}
 	inters struct {
-		Category_Questions, Example, Form_Response, History_Answer, Questions,
-		User []ent.Interceptor
+		Activation_token, Category_Questions, Example, Form_Response, History_Answer,
+		Questions, Session, User []ent.Interceptor
 	}
 )

@@ -51,12 +51,10 @@ type History_AnswerEdges struct {
 // FormResponseOrErr returns the FormResponse value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e History_AnswerEdges) FormResponseOrErr() (*Form_Response, error) {
-	if e.loadedTypes[0] {
-		if e.FormResponse == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: form_response.Label}
-		}
+	if e.FormResponse != nil {
 		return e.FormResponse, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: form_response.Label}
 	}
 	return nil, &NotLoadedError{edge: "form_response"}
 }
@@ -64,12 +62,10 @@ func (e History_AnswerEdges) FormResponseOrErr() (*Form_Response, error) {
 // QuestionOrErr returns the Question value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e History_AnswerEdges) QuestionOrErr() (*Questions, error) {
-	if e.loadedTypes[1] {
-		if e.Question == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: questions.Label}
-		}
+	if e.Question != nil {
 		return e.Question, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: questions.Label}
 	}
 	return nil, &NotLoadedError{edge: "question"}
 }

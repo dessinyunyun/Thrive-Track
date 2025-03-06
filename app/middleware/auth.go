@@ -1,114 +1,66 @@
 package middleware
 
 import (
-	"errors"
+	"go-gin/app/auth"
+	"go-gin/app/tools"
+	"net/http"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
-func Authz() gin.HandlerFunc {
+func AuthMiddleware(log *logrus.Entry) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		clientToken := c.Request.Header.Get("Authorization")
-		if clientToken == "" {
-			c.JSON(403, "No Authorization header provided")
+		tokenString := c.GetHeader("Authorization")
+
+		parts := strings.Fields(tokenString)
+
+		if tokenString == "" {
+			c.JSON(http.StatusUnauthorized, tools.Response{
+				Message: "Token is missing",
+			})
 			c.Abort()
 			return
 		}
 
-		extractedToken := strings.Split(clientToken, "Bearer ")
-		if len(extractedToken) == 2 {
-			clientToken = strings.TrimSpace(extractedToken[1])
-		} else {
-			c.JSON(400, "Incorrect format of Authorization Token")
+		if len(parts) < 2 {
+			c.JSON(http.StatusUnauthorized, tools.Response{
+				Message: "Token is missing",
+				Status:  "error",
+			})
 			c.Abort()
 			return
 		}
 
-		jwtWrapper := JwtWrapper{
-			SecretKey: os.Getenv("PREFIX_API"),
-			Issuer:    "MHService", // Indicates the entity or service that issued the token
-		}
+		token, err := jwt.ParseWithClaims(parts[1], &auth.CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+			return []byte(os.Getenv("SECRET_KEY")), nil
+		})
 
-		claims, err := jwtWrapper.ValidateToken(clientToken)
 		if err != nil {
-			c.JSON(401, err.Error())
+			c.JSON(http.StatusUnauthorized, tools.Response{
+				Message: "Invalid token",
+				Status:  "error",
+			})
 			c.Abort()
 			return
 		}
 
-		c.Set("email", claims.Email)
-		c.Next()
-	}
-}
+		if claims, ok := token.Claims.(*auth.CustomClaims); ok && token.Valid {
 
-type JwtWrapper struct {
-	SecretKey         string
-	Issuer            string
-	ExpirationMinutes int64
-	ExpirationHours   int64
-}
+			userID, _ := tools.ConvertUUID(string(claims.User.ID.ID()))
+			c.Set("user_id", userID)
 
-type JwtClaim struct {
-	Email string
-	jwt.StandardClaims
-}
+			c.Next()
 
-func (j *JwtWrapper) GenerateToken(email string) (signedToken string, err error) {
-	claims := &JwtClaim{
-		Email: email,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Local().Add(time.Minute * time.Duration(j.ExpirationMinutes)).Unix(),
-			Issuer:    j.Issuer,
-		},
+		} else {
+			c.JSON(http.StatusUnauthorized, tools.Response{
+				Message: "Unauthorized",
+				Status:  "error",
+			})
+			c.Abort()
+		}
 	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	signedToken, err = token.SignedString([]byte(j.SecretKey))
-	if err != nil {
-		return
-	}
-	return
-}
-
-func (j *JwtWrapper) RefreshToken(email string) (signedToken string, err error) {
-	claims := &JwtClaim{
-		Email: email,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Local().Add(time.Hour * time.Duration(j.ExpirationHours)).Unix(),
-			Issuer:    j.Issuer,
-		},
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
-	signedToken, err = token.SignedString([]byte(j.SecretKey))
-	if err != nil {
-		return
-	}
-	return
-}
-
-func (j *JwtWrapper) ValidateToken(signedToken string) (claims *JwtClaim, err error) {
-	token, err := jwt.ParseWithClaims(
-		signedToken,
-		&JwtClaim{},
-		func(token *jwt.Token) (interface{}, error) {
-			return []byte(j.SecretKey), nil
-		},
-	)
-
-	if err != nil {
-		return
-	}
-	claims, ok := token.Claims.(*JwtClaim)
-	if !ok {
-		err = errors.New("couldn't parse claims")
-		return
-	}
-	if claims.ExpiresAt < time.Now().Local().Unix() {
-		err = errors.New("JWT is Expired")
-		return
-	}
-	return
 }

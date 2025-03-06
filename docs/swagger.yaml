@@ -1,13 +1,26 @@
 definitions:
+  auth.ActivatedTokenForm:
+    properties:
+      token:
+        type: string
+    type: object
   auth.LoginForm:
     properties:
-      identifier:
+      email:
         type: string
       password:
         type: string
+      username:
+        type: string
     required:
-    - identifier
     - password
+    type: object
+  auth.RefreshTokenForm:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
     type: object
   auth.RegisterForm:
     properties:
@@ -57,6 +70,24 @@ definitions:
 info:
   contact: {}
 paths:
+  /auth/activated-client:
+    patch:
+      consumes:
+      - application/json
+      description: ActivatedClient with token
+      parameters:
+      - description: Payload Body for Patch [RAW]
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.ActivatedTokenForm'
+      produces:
+      - application/json
+      responses: {}
+      summary: ActivatedClient
+      tags:
+      - Auth
   /auth/login:
     post:
       consumes:
@@ -73,6 +104,24 @@ paths:
       - application/json
       responses: {}
       summary: Login
+      tags:
+      - Auth
+  /auth/refresh-token:
+    patch:
+      consumes:
+      - application/json
+      description: RefreshToken
+      parameters:
+      - description: Payload Body for RefreshToken [RAW]
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.RefreshTokenForm'
+      produces:
+      - application/json
+      responses: {}
+      summary: RefreshToken
       tags:
       - Auth
   /auth/register:
@@ -214,6 +263,11 @@ paths:
       - application/json
       description: Get All Example
       parameters:
+      - description: Bearer Token
+        in: header
+        name: Authorization
+        required: true
+        type: string
       - description: ID in Array
         in: query
         name: id
@@ -314,22 +368,6 @@ paths:
       - application/json
       responses: {}
       summary: Update User
-      tags:
-      - User
-  /user/check-identifier:
-    get:
-      consumes:
-      - application/json
-      description: Check Identifier Available
-      parameters:
-      - description: Identifier
-        in: query
-        name: identifier
-        type: string
-      produces:
-      - application/json
-      responses: {}
-      summary: Check Identifier Available
       tags:
       - User
 swagger: "2.0"

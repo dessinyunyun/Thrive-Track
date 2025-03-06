@@ -169,10 +169,10 @@ func (hac *HistoryAnswerCreate) check() error {
 			return &ValidationError{Name: "answer", err: fmt.Errorf(`ent: validator failed for field "History_Answer.answer": %w`, err)}
 		}
 	}
-	if _, ok := hac.mutation.FormResponseID(); !ok {
+	if len(hac.mutation.FormResponseIDs()) == 0 {
 		return &ValidationError{Name: "form_response", err: errors.New(`ent: missing required edge "History_Answer.form_response"`)}
 	}
-	if _, ok := hac.mutation.QuestionID(); !ok {
+	if len(hac.mutation.QuestionIDs()) == 0 {
 		return &ValidationError{Name: "question", err: errors.New(`ent: missing required edge "History_Answer.question"`)}
 	}
 	return nil

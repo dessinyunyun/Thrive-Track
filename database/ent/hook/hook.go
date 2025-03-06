@@ -8,6 +8,18 @@ import (
 	"go-gin/database/ent"
 )
 
+// The Activation_tokenFunc type is an adapter to allow the use of ordinary
+// function as Activation_token mutator.
+type Activation_tokenFunc func(context.Context, *ent.ActivationTokenMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f Activation_tokenFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ActivationTokenMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ActivationTokenMutation", m)
+}
+
 // The Category_QuestionsFunc type is an adapter to allow the use of ordinary
 // function as Category_Questions mutator.
 type Category_QuestionsFunc func(context.Context, *ent.CategoryQuestionsMutation) (ent.Value, error)
@@ -66,6 +78,18 @@ func (f QuestionsFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, e
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.QuestionsMutation", m)
+}
+
+// The SessionFunc type is an adapter to allow the use of ordinary
+// function as Session mutator.
+type SessionFunc func(context.Context, *ent.SessionMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f SessionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.SessionMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SessionMutation", m)
 }
 
 // The UserFunc type is an adapter to allow the use of ordinary

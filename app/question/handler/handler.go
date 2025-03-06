@@ -28,13 +28,6 @@ func QuestionRoute(uc question.QuestionUsecase, r *gin.RouterGroup, log *logrus.
 
 }
 
-// @Tags Example
-// @Summary Get Detail Example
-// @Description Get Detail Example by ID
-// @Router /example/{id} [get]
-// @Accept json
-// @Produce json
-// @param id path string true "ID"
 func (h *Handler) GetDetail(c *gin.Context) {
 	result, err := h.uc.GetDetail(c)
 	if err != nil {
@@ -52,13 +45,6 @@ func (h *Handler) GetDetail(c *gin.Context) {
 	})
 }
 
-// @Tags Example
-// @Summary Create Example
-// @Description Create Example
-// @Router /example [post]
-// @Accept json
-// @Produce json
-// @Param request body example.ExampleForm true "Payload Body for Create [RAW]"
 func (h *Handler) Create(c *gin.Context) {
 	err := h.uc.Create(c)
 	if err != nil {

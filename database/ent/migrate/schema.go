@@ -8,6 +8,30 @@ import (
 )
 
 var (
+	// ActivationTokensColumns holds the columns for the "activation_tokens" table.
+	ActivationTokensColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true},
+		{Name: "token", Type: field.TypeString, Unique: true, Size: 255},
+		{Name: "isused", Type: field.TypeBool, Default: false},
+		{Name: "user_id", Type: field.TypeUUID, Unique: true},
+	}
+	// ActivationTokensTable holds the schema information for the "activation_tokens" table.
+	ActivationTokensTable = &schema.Table{
+		Name:       "activation_tokens",
+		Columns:    ActivationTokensColumns,
+		PrimaryKey: []*schema.Column{ActivationTokensColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "activation_tokens_users_activation_tokens",
+				Columns:    []*schema.Column{ActivationTokensColumns[6]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// CategoryQuestionsColumns holds the columns for the "category_questions" table.
 	CategoryQuestionsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -105,16 +129,37 @@ var (
 		Columns:    QuestionsColumns,
 		PrimaryKey: []*schema.Column{QuestionsColumns[0]},
 	}
-	// UsersColumns holds the columns for the "users" table.
-	UsersColumns = []*schema.Column{
+	// SessionsColumns holds the columns for the "sessions" table.
+	SessionsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "deleted_at", Type: field.TypeTime, Nullable: true},
+		{Name: "token", Type: field.TypeString, Unique: true, Size: 255},
+		{Name: "user_id", Type: field.TypeUUID, Unique: true},
+	}
+	// SessionsTable holds the schema information for the "sessions" table.
+	SessionsTable = &schema.Table{
+		Name:       "sessions",
+		Columns:    SessionsColumns,
+		PrimaryKey: []*schema.Column{SessionsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "sessions_users_sessions",
+				Columns:    []*schema.Column{SessionsColumns[5]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// UsersColumns holds the columns for the "users" table.
+	UsersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
 		{Name: "name", Type: field.TypeString},
 		{Name: "username", Type: field.TypeString, Unique: true, Size: 100},
 		{Name: "email", Type: field.TypeString, Unique: true, Nullable: true, Size: 150},
 		{Name: "password", Type: field.TypeString, Size: 255},
+		{Name: "active", Type: field.TypeBool, Default: false},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{
@@ -124,17 +169,21 @@ var (
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		ActivationTokensTable,
 		CategoryQuestionsTable,
 		ExamplesTable,
 		FormResponsesTable,
 		HistoryAnswersTable,
 		QuestionsTable,
+		SessionsTable,
 		UsersTable,
 	}
 )
 
 func init() {
+	ActivationTokensTable.ForeignKeys[0].RefTable = UsersTable
 	FormResponsesTable.ForeignKeys[0].RefTable = UsersTable
 	HistoryAnswersTable.ForeignKeys[0].RefTable = FormResponsesTable
 	HistoryAnswersTable.ForeignKeys[1].RefTable = QuestionsTable
+	SessionsTable.ForeignKeys[0].RefTable = UsersTable
 }

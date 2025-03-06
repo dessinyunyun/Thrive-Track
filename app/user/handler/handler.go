@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"go-gin/app/middleware"
 	"go-gin/app/tools"
 	"go-gin/app/user"
 	"net/http"
@@ -20,7 +21,7 @@ func UserRoute(uc user.UserUsecase, r *gin.RouterGroup, log *logrus.Entry) {
 		log: log,
 	}
 
-	v2 := r.Group("user")
+	v2 := r.Group("user", middleware.AuthMiddleware(log))
 
 	v2.GET("", h.GetAllUser)
 	v2.GET("/:id", h.GetDetailUser)
@@ -35,6 +36,7 @@ func UserRoute(uc user.UserUsecase, r *gin.RouterGroup, log *logrus.Entry) {
 // @Router /user [get]
 // @Accept json
 // @Produce json
+// @Param Authorization header string true "Bearer Token"
 // @param id query array false "ID in Array"
 // @param name query string false "Filter by Name"
 // @param username query string false "Filter by Username"

@@ -12,6 +12,7 @@ import (
 	"go-gin/database/ent/user"
 	"math"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -110,7 +111,7 @@ func (frq *FormResponseQuery) QueryUser() *UserQuery {
 // First returns the first Form_Response entity from the query.
 // Returns a *NotFoundError when no Form_Response was found.
 func (frq *FormResponseQuery) First(ctx context.Context) (*Form_Response, error) {
-	nodes, err := frq.Limit(1).All(setContextOp(ctx, frq.ctx, "First"))
+	nodes, err := frq.Limit(1).All(setContextOp(ctx, frq.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +134,7 @@ func (frq *FormResponseQuery) FirstX(ctx context.Context) *Form_Response {
 // Returns a *NotFoundError when no Form_Response ID was found.
 func (frq *FormResponseQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = frq.Limit(1).IDs(setContextOp(ctx, frq.ctx, "FirstID")); err != nil {
+	if ids, err = frq.Limit(1).IDs(setContextOp(ctx, frq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -156,7 +157,7 @@ func (frq *FormResponseQuery) FirstIDX(ctx context.Context) int {
 // Returns a *NotSingularError when more than one Form_Response entity is found.
 // Returns a *NotFoundError when no Form_Response entities are found.
 func (frq *FormResponseQuery) Only(ctx context.Context) (*Form_Response, error) {
-	nodes, err := frq.Limit(2).All(setContextOp(ctx, frq.ctx, "Only"))
+	nodes, err := frq.Limit(2).All(setContextOp(ctx, frq.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +185,7 @@ func (frq *FormResponseQuery) OnlyX(ctx context.Context) *Form_Response {
 // Returns a *NotFoundError when no entities are found.
 func (frq *FormResponseQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = frq.Limit(2).IDs(setContextOp(ctx, frq.ctx, "OnlyID")); err != nil {
+	if ids, err = frq.Limit(2).IDs(setContextOp(ctx, frq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -209,7 +210,7 @@ func (frq *FormResponseQuery) OnlyIDX(ctx context.Context) int {
 
 // All executes the query and returns a list of Form_Responses.
 func (frq *FormResponseQuery) All(ctx context.Context) ([]*Form_Response, error) {
-	ctx = setContextOp(ctx, frq.ctx, "All")
+	ctx = setContextOp(ctx, frq.ctx, ent.OpQueryAll)
 	if err := frq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
@@ -231,7 +232,7 @@ func (frq *FormResponseQuery) IDs(ctx context.Context) (ids []int, err error) {
 	if frq.ctx.Unique == nil && frq.path != nil {
 		frq.Unique(true)
 	}
-	ctx = setContextOp(ctx, frq.ctx, "IDs")
+	ctx = setContextOp(ctx, frq.ctx, ent.OpQueryIDs)
 	if err = frq.Select(form_response.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -249,7 +250,7 @@ func (frq *FormResponseQuery) IDsX(ctx context.Context) []int {
 
 // Count returns the count of the given query.
 func (frq *FormResponseQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, frq.ctx, "Count")
+	ctx = setContextOp(ctx, frq.ctx, ent.OpQueryCount)
 	if err := frq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
@@ -267,7 +268,7 @@ func (frq *FormResponseQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (frq *FormResponseQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, frq.ctx, "Exist")
+	ctx = setContextOp(ctx, frq.ctx, ent.OpQueryExist)
 	switch _, err := frq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
@@ -604,7 +605,7 @@ func (frgb *FormResponseGroupBy) Aggregate(fns ...AggregateFunc) *FormResponseGr
 
 // Scan applies the selector query and scans the result into the given value.
 func (frgb *FormResponseGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, frgb.build.ctx, "GroupBy")
+	ctx = setContextOp(ctx, frgb.build.ctx, ent.OpQueryGroupBy)
 	if err := frgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
@@ -652,7 +653,7 @@ func (frs *FormResponseSelect) Aggregate(fns ...AggregateFunc) *FormResponseSele
 
 // Scan applies the selector query and scans the result into the given value.
 func (frs *FormResponseSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, frs.ctx, "Select")
+	ctx = setContextOp(ctx, frs.ctx, ent.OpQuerySelect)
 	if err := frs.prepareQuery(ctx); err != nil {
 		return err
 	}

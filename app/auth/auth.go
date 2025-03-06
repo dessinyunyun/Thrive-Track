@@ -1,10 +1,13 @@
 package auth
 
 import (
-	"errors"
+	"context"
+	"go-gin/database/ent"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gofrs/uuid"
+	"github.com/golang-jwt/jwt"
+	googleUUID "github.com/google/uuid"
 )
 
 type RegisterForm struct {
@@ -21,12 +24,6 @@ type LoginForm struct {
 	Password string `json:"password" binding:"required"`
 }
 
-type LoginResponse struct {
-	Token        string            `json:"token"`
-	RefreshToken string            `json:"refreshtoken"`
-	User         LoginResponseUser `json:"user"`
-}
-
 type LoginResponseUser struct {
 	ID       string `json:"id"`
 	Name     string `json:"name"`
@@ -34,19 +31,46 @@ type LoginResponseUser struct {
 	Email    string `json:"email"`
 }
 
-type AuthUsecase interface {
-	Register(c *gin.Context) error
-	Login(c *gin.Context) (*LoginResponse, error)
-	// UpdateExample(c *gin.Context) error
-	// DeleteExample(c *gin.Context) error
+type Authenticate struct {
+	User        *ent.User `json:"user"`
+	AccessToken JWT       `json:"access_token"`
 }
 
-var (
-	ErrIdentityNotFound = errors.New("Email or Username not found. Please register")
-	ErrWrongPassword    = errors.New("Authentication failed: wrong password")
+type JWT struct {
+	Token        string `json:"token"`
+	RefreshToken string `json:"refresh_token"`
+}
 
-	ErrEmailAlreadyExist    = errors.New("Email already exist")
-	ErrUsernameAlreadyExist = errors.New("Username already exist")
+type RefreshTokenForm struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}
 
-	ErrEmailandUsernameAlreadyExist = errors.New("Email and Username already exist")
-)
+type ActivatedTokenForm struct {
+	Token string `json:"token"`
+}
+
+type JwtWrapper struct {
+	SecretKey         string
+	Issuer            string
+	ExpirationMinutes int64
+	ExpirationHours   int64
+}
+
+type CustomClaims struct {
+	User               *ent.User `json:"user"`
+	jwt.StandardClaims `json:"standard_claims"`
+}
+
+type AuthUsecase interface {
+	Register(c *gin.Context) error
+	Login(c *gin.Context) (*Authenticate, error)
+	RefreshToken(c *gin.Context) (*Authenticate, error)
+	ActivateUser(c *gin.Context) error
+	GetDetailAT(userID googleUUID.UUID) (*ent.Activation_token, error)
+}
+
+type AuthRepository interface {
+	CreateAT(ctx context.Context, token, userID string) error
+	UsedAT(ctx context.Context, userID googleUUID.UUID) error
+	GetDetailAT(ctx context.Context, userID googleUUID.UUID) (*ent.Activation_token, error)
+}

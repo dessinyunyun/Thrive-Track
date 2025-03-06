@@ -9,6 +9,7 @@ import (
 	"go-gin/database/ent/predicate"
 	"math"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -60,7 +61,7 @@ func (cqq *CategoryQuestionsQuery) Order(o ...category_questions.OrderOption) *C
 // First returns the first Category_Questions entity from the query.
 // Returns a *NotFoundError when no Category_Questions was found.
 func (cqq *CategoryQuestionsQuery) First(ctx context.Context) (*Category_Questions, error) {
-	nodes, err := cqq.Limit(1).All(setContextOp(ctx, cqq.ctx, "First"))
+	nodes, err := cqq.Limit(1).All(setContextOp(ctx, cqq.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +84,7 @@ func (cqq *CategoryQuestionsQuery) FirstX(ctx context.Context) *Category_Questio
 // Returns a *NotFoundError when no Category_Questions ID was found.
 func (cqq *CategoryQuestionsQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = cqq.Limit(1).IDs(setContextOp(ctx, cqq.ctx, "FirstID")); err != nil {
+	if ids, err = cqq.Limit(1).IDs(setContextOp(ctx, cqq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -106,7 +107,7 @@ func (cqq *CategoryQuestionsQuery) FirstIDX(ctx context.Context) int {
 // Returns a *NotSingularError when more than one Category_Questions entity is found.
 // Returns a *NotFoundError when no Category_Questions entities are found.
 func (cqq *CategoryQuestionsQuery) Only(ctx context.Context) (*Category_Questions, error) {
-	nodes, err := cqq.Limit(2).All(setContextOp(ctx, cqq.ctx, "Only"))
+	nodes, err := cqq.Limit(2).All(setContextOp(ctx, cqq.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +135,7 @@ func (cqq *CategoryQuestionsQuery) OnlyX(ctx context.Context) *Category_Question
 // Returns a *NotFoundError when no entities are found.
 func (cqq *CategoryQuestionsQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = cqq.Limit(2).IDs(setContextOp(ctx, cqq.ctx, "OnlyID")); err != nil {
+	if ids, err = cqq.Limit(2).IDs(setContextOp(ctx, cqq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -159,7 +160,7 @@ func (cqq *CategoryQuestionsQuery) OnlyIDX(ctx context.Context) int {
 
 // All executes the query and returns a list of Category_QuestionsSlice.
 func (cqq *CategoryQuestionsQuery) All(ctx context.Context) ([]*Category_Questions, error) {
-	ctx = setContextOp(ctx, cqq.ctx, "All")
+	ctx = setContextOp(ctx, cqq.ctx, ent.OpQueryAll)
 	if err := cqq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
@@ -181,7 +182,7 @@ func (cqq *CategoryQuestionsQuery) IDs(ctx context.Context) (ids []int, err erro
 	if cqq.ctx.Unique == nil && cqq.path != nil {
 		cqq.Unique(true)
 	}
-	ctx = setContextOp(ctx, cqq.ctx, "IDs")
+	ctx = setContextOp(ctx, cqq.ctx, ent.OpQueryIDs)
 	if err = cqq.Select(category_questions.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -199,7 +200,7 @@ func (cqq *CategoryQuestionsQuery) IDsX(ctx context.Context) []int {
 
 // Count returns the count of the given query.
 func (cqq *CategoryQuestionsQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, cqq.ctx, "Count")
+	ctx = setContextOp(ctx, cqq.ctx, ent.OpQueryCount)
 	if err := cqq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
@@ -217,7 +218,7 @@ func (cqq *CategoryQuestionsQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (cqq *CategoryQuestionsQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, cqq.ctx, "Exist")
+	ctx = setContextOp(ctx, cqq.ctx, ent.OpQueryExist)
 	switch _, err := cqq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
@@ -427,7 +428,7 @@ func (cqgb *CategoryQuestionsGroupBy) Aggregate(fns ...AggregateFunc) *CategoryQ
 
 // Scan applies the selector query and scans the result into the given value.
 func (cqgb *CategoryQuestionsGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, cqgb.build.ctx, "GroupBy")
+	ctx = setContextOp(ctx, cqgb.build.ctx, ent.OpQueryGroupBy)
 	if err := cqgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
@@ -475,7 +476,7 @@ func (cqs *CategoryQuestionsSelect) Aggregate(fns ...AggregateFunc) *CategoryQue
 
 // Scan applies the selector query and scans the result into the given value.
 func (cqs *CategoryQuestionsSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, cqs.ctx, "Select")
+	ctx = setContextOp(ctx, cqs.ctx, ent.OpQuerySelect)
 	if err := cqs.prepareQuery(ctx); err != nil {
 		return err
 	}

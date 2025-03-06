@@ -2,6 +2,7 @@ package handler
 
 import (
 	"go-gin/app/history_answer"
+	"go-gin/app/middleware"
 	"go-gin/app/tools"
 	"net/http"
 
@@ -20,7 +21,7 @@ func HistoryAnswerRoute(uc history_answer.HistoryAnswerUsecase, r *gin.RouterGro
 		log: log,
 	}
 
-	v2 := r.Group("history-answer")
+	v2 := r.Group("history-answer", middleware.AuthMiddleware(log))
 
 	v2.GET("/", h.GetAll)
 	v2.GET("/:id", h.GetDetail)
@@ -54,13 +55,6 @@ func (h *Handler) GetAll(c *gin.Context) {
 	})
 }
 
-// @Tags Example
-// @Summary Get Detail Example
-// @Description Get Detail Example by ID
-// @Router /example/{id} [get]
-// @Accept json
-// @Produce json
-// @param id path string true "ID"
 func (h *Handler) GetDetail(c *gin.Context) {
 	result, err := h.uc.GetDetail(c)
 	if err != nil {
@@ -78,13 +72,6 @@ func (h *Handler) GetDetail(c *gin.Context) {
 	})
 }
 
-// @Tags Example
-// @Summary Create Example
-// @Description Create Example
-// @Router /example [post]
-// @Accept json
-// @Produce json
-// @Param request body example.ExampleForm true "Payload Body for Create [RAW]"
 func (h *Handler) Create(c *gin.Context) {
 	err := h.uc.Create(c)
 	if err != nil {

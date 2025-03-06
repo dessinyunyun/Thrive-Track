@@ -11,6 +11,7 @@ import (
 	"go-gin/database/ent/questions"
 	"math"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -108,7 +109,7 @@ func (haq *HistoryAnswerQuery) QueryQuestion() *QuestionsQuery {
 // First returns the first History_Answer entity from the query.
 // Returns a *NotFoundError when no History_Answer was found.
 func (haq *HistoryAnswerQuery) First(ctx context.Context) (*History_Answer, error) {
-	nodes, err := haq.Limit(1).All(setContextOp(ctx, haq.ctx, "First"))
+	nodes, err := haq.Limit(1).All(setContextOp(ctx, haq.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +132,7 @@ func (haq *HistoryAnswerQuery) FirstX(ctx context.Context) *History_Answer {
 // Returns a *NotFoundError when no History_Answer ID was found.
 func (haq *HistoryAnswerQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = haq.Limit(1).IDs(setContextOp(ctx, haq.ctx, "FirstID")); err != nil {
+	if ids, err = haq.Limit(1).IDs(setContextOp(ctx, haq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -154,7 +155,7 @@ func (haq *HistoryAnswerQuery) FirstIDX(ctx context.Context) int {
 // Returns a *NotSingularError when more than one History_Answer entity is found.
 // Returns a *NotFoundError when no History_Answer entities are found.
 func (haq *HistoryAnswerQuery) Only(ctx context.Context) (*History_Answer, error) {
-	nodes, err := haq.Limit(2).All(setContextOp(ctx, haq.ctx, "Only"))
+	nodes, err := haq.Limit(2).All(setContextOp(ctx, haq.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +183,7 @@ func (haq *HistoryAnswerQuery) OnlyX(ctx context.Context) *History_Answer {
 // Returns a *NotFoundError when no entities are found.
 func (haq *HistoryAnswerQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = haq.Limit(2).IDs(setContextOp(ctx, haq.ctx, "OnlyID")); err != nil {
+	if ids, err = haq.Limit(2).IDs(setContextOp(ctx, haq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -207,7 +208,7 @@ func (haq *HistoryAnswerQuery) OnlyIDX(ctx context.Context) int {
 
 // All executes the query and returns a list of History_Answers.
 func (haq *HistoryAnswerQuery) All(ctx context.Context) ([]*History_Answer, error) {
-	ctx = setContextOp(ctx, haq.ctx, "All")
+	ctx = setContextOp(ctx, haq.ctx, ent.OpQueryAll)
 	if err := haq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
@@ -229,7 +230,7 @@ func (haq *HistoryAnswerQuery) IDs(ctx context.Context) (ids []int, err error) {
 	if haq.ctx.Unique == nil && haq.path != nil {
 		haq.Unique(true)
 	}
-	ctx = setContextOp(ctx, haq.ctx, "IDs")
+	ctx = setContextOp(ctx, haq.ctx, ent.OpQueryIDs)
 	if err = haq.Select(history_answer.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -247,7 +248,7 @@ func (haq *HistoryAnswerQuery) IDsX(ctx context.Context) []int {
 
 // Count returns the count of the given query.
 func (haq *HistoryAnswerQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, haq.ctx, "Count")
+	ctx = setContextOp(ctx, haq.ctx, ent.OpQueryCount)
 	if err := haq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
@@ -265,7 +266,7 @@ func (haq *HistoryAnswerQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (haq *HistoryAnswerQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, haq.ctx, "Exist")
+	ctx = setContextOp(ctx, haq.ctx, ent.OpQueryExist)
 	switch _, err := haq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
@@ -603,7 +604,7 @@ func (hagb *HistoryAnswerGroupBy) Aggregate(fns ...AggregateFunc) *HistoryAnswer
 
 // Scan applies the selector query and scans the result into the given value.
 func (hagb *HistoryAnswerGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, hagb.build.ctx, "GroupBy")
+	ctx = setContextOp(ctx, hagb.build.ctx, ent.OpQueryGroupBy)
 	if err := hagb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
@@ -651,7 +652,7 @@ func (has *HistoryAnswerSelect) Aggregate(fns ...AggregateFunc) *HistoryAnswerSe
 
 // Scan applies the selector query and scans the result into the given value.
 func (has *HistoryAnswerSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, has.ctx, "Select")
+	ctx = setContextOp(ctx, has.ctx, ent.OpQuerySelect)
 	if err := has.prepareQuery(ctx); err != nil {
 		return err
 	}

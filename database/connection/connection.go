@@ -24,7 +24,7 @@ func ConnectionDB(ctx context.Context, log *logrus.Entry, dbuser string, dbpass 
 	// Inisialisasi schema Ent
 	client, err := ent.Open("mysql", dsn)
 	if err != nil {
-		log.Errorf("Gagal membuka koneksi Ent: %v", err)
+		log.Errorf("Failed to open connection Ent: %v", err)
 		return nil
 	}
 

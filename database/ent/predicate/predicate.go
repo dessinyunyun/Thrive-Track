@@ -6,6 +6,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// Activation_token is the predicate function for activation_token builders.
+type Activation_token func(*sql.Selector)
+
 // Category_Questions is the predicate function for category_questions builders.
 type Category_Questions func(*sql.Selector)
 
@@ -20,6 +23,9 @@ type History_Answer func(*sql.Selector)
 
 // Questions is the predicate function for questions builders.
 type Questions func(*sql.Selector)
+
+// Session is the predicate function for session builders.
+type Session func(*sql.Selector)
 
 // User is the predicate function for user builders.
 type User func(*sql.Selector)

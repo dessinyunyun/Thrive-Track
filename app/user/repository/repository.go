@@ -7,7 +7,6 @@ import (
 	"go-gin/app/user"
 	"go-gin/database/ent"
 	entUser "go-gin/database/ent/user"
-	"time"
 
 	googleUUID "github.com/google/uuid"
 )
@@ -52,7 +51,7 @@ func (r *UserRepository) GetAllUser(ctx context.Context, pagination *tools.Pagin
 	return users, pagination, nil
 }
 
-func (r *UserRepository) GetDetailUser(ctx context.Context, ID googleUUID.UUID) (*user.UserResponse, error) {
+func (r *UserRepository) GetDetailUser(ctx context.Context, ID googleUUID.UUID) (*ent.User, error) {
 	userQuery := r.db.User.Query().
 		Where(
 			entUser.IDEQ(ID),
@@ -64,15 +63,10 @@ func (r *UserRepository) GetDetailUser(ctx context.Context, ID googleUUID.UUID) 
 
 	exec, _ := userQuery.First(ctx)
 
-	return &user.UserResponse{
-		ID:       exec.ID,
-		Name:     exec.Name,
-		Username: exec.Username,
-		Email:    exec.Email,
-	}, nil
+	return exec, nil
 }
 
-func (r *UserRepository) CheckEmailAndUsernameExist(ctx context.Context, email, username *string) (*user.UserResponseSensitiveCase, error) {
+func (r *UserRepository) CheckEmailAndUsernameExist(ctx context.Context, email, username *string) (*ent.User, error) {
 	userQuery := r.db.User.Query().
 		Where(
 			entUser.Or(
@@ -87,39 +81,35 @@ func (r *UserRepository) CheckEmailAndUsernameExist(ctx context.Context, email, 
 
 	exec, _ := userQuery.First(ctx)
 
-	return &user.UserResponseSensitiveCase{
-		ID:       exec.ID,
-		Name:     exec.Name,
-		Username: exec.Username,
-		Email:    exec.Email,
-		Password: exec.Password,
-	}, nil
+	return exec, nil
 }
 
-func (r *UserRepository) CreateUser(ctx context.Context, form *user.UserForm) error {
+func (r *UserRepository) CreateUser(ctx context.Context, form *user.UserForm) (*ent.User, error) {
 	tx, err := r.db.Tx(ctx)
 	if err != nil {
-		return err
+		fmt.Println("errrr====4", err)
+		return nil, err
 	}
 
-	_, err = tx.User.Create().
+	res, err := tx.User.Create().
 		SetName(form.Name).
 		SetEmail(form.Email).
 		SetUsername(form.Username).
 		SetPassword(form.Password).
 		Save(ctx)
 	if err != nil {
-		fmt.Println("errerr.Error(): ", err.Error())
-		fmt.Println("err: ")
+		fmt.Println("errrr====", err)
 		tx.Rollback()
-		return err
+		return nil, err
 	}
 
 	if err = tx.Commit(); err != nil {
-		return err
+		fmt.Println("errrr====1", err)
+		return nil, err
 	}
+	fmt.Println("errrr====8", res)
 
-	return nil
+	return res, nil
 }
 
 func (r *UserRepository) UpdateUser(ctx context.Context, form *user.UserForm) error {
@@ -146,6 +136,28 @@ func (r *UserRepository) UpdateUser(ctx context.Context, form *user.UserForm) er
 	return nil
 }
 
+func (r *UserRepository) ActivatedUser(ctx context.Context, userID googleUUID.UUID) error {
+	tx, err := r.db.Tx(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = tx.User.Update().
+		Where(entUser.ID(userID)).
+		SetActive(true).
+		Exec(ctx)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r *UserRepository) DeleteUser(ctx context.Context, ID googleUUID.UUID) error {
 	tx, err := r.db.Tx(ctx)
 	if err != nil {
@@ -157,13 +169,13 @@ func (r *UserRepository) DeleteUser(ctx context.Context, ID googleUUID.UUID) err
 		return err
 	}
 
-	deleted_at := time.Now()
+	// deleted_at := time.Now()
 
 	err = tx.User.Update().
 		Where(
 			entUser.IDEQ(queryUser.ID),
 		).
-		SetNillableDeletedAt(&deleted_at).
+		// SetNillableDeletedAt(&deleted_at).
 		Exec(ctx)
 	if err != nil {
 		tx.Rollback()

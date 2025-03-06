@@ -4,9 +4,10 @@ package ent
 
 import (
 	"fmt"
+	"go-gin/database/ent/activation_token"
+	"go-gin/database/ent/session"
 	"go-gin/database/ent/user"
 	"strings"
-	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
@@ -18,12 +19,6 @@ type User struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID uuid.UUID `json:"id,omitempty"`
-	// CreatedAt holds the value of the "created_at" field.
-	CreatedAt time.Time `json:"created_at,omitempty"`
-	// UpdatedAt holds the value of the "updated_at" field.
-	UpdatedAt time.Time `json:"updated_at,omitempty"`
-	// DeletedAt holds the value of the "deleted_at" field.
-	DeletedAt *time.Time `json:"deleted_at,omitempty"`
 	// Name holds the value of the "name" field.
 	Name string `json:"name,omitempty"`
 	// Username holds the value of the "username" field.
@@ -32,6 +27,8 @@ type User struct {
 	Email *string `json:"email,omitempty"`
 	// Password holds the value of the "password" field.
 	Password string `json:"-"`
+	// Active holds the value of the "active" field.
+	Active bool `json:"active,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserQuery when eager-loading is set.
 	Edges        UserEdges `json:"edges"`
@@ -42,9 +39,13 @@ type User struct {
 type UserEdges struct {
 	// FormResponses holds the value of the form_responses edge.
 	FormResponses []*Form_Response `json:"form_responses,omitempty"`
+	// ActivationTokens holds the value of the activation_tokens edge.
+	ActivationTokens *Activation_token `json:"activation_tokens,omitempty"`
+	// Sessions holds the value of the sessions edge.
+	Sessions *Session `json:"sessions,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [3]bool
 }
 
 // FormResponsesOrErr returns the FormResponses value or an error if the edge
@@ -56,15 +57,37 @@ func (e UserEdges) FormResponsesOrErr() ([]*Form_Response, error) {
 	return nil, &NotLoadedError{edge: "form_responses"}
 }
 
+// ActivationTokensOrErr returns the ActivationTokens value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e UserEdges) ActivationTokensOrErr() (*Activation_token, error) {
+	if e.ActivationTokens != nil {
+		return e.ActivationTokens, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: activation_token.Label}
+	}
+	return nil, &NotLoadedError{edge: "activation_tokens"}
+}
+
+// SessionsOrErr returns the Sessions value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e UserEdges) SessionsOrErr() (*Session, error) {
+	if e.Sessions != nil {
+		return e.Sessions, nil
+	} else if e.loadedTypes[2] {
+		return nil, &NotFoundError{label: session.Label}
+	}
+	return nil, &NotLoadedError{edge: "sessions"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*User) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case user.FieldActive:
+			values[i] = new(sql.NullBool)
 		case user.FieldName, user.FieldUsername, user.FieldEmail, user.FieldPassword:
 			values[i] = new(sql.NullString)
-		case user.FieldCreatedAt, user.FieldUpdatedAt, user.FieldDeletedAt:
-			values[i] = new(sql.NullTime)
 		case user.FieldID:
 			values[i] = new(uuid.UUID)
 		default:
@@ -87,25 +110,6 @@ func (u *User) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
 				u.ID = *value
-			}
-		case user.FieldCreatedAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field created_at", values[i])
-			} else if value.Valid {
-				u.CreatedAt = value.Time
-			}
-		case user.FieldUpdatedAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
-			} else if value.Valid {
-				u.UpdatedAt = value.Time
-			}
-		case user.FieldDeletedAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field deleted_at", values[i])
-			} else if value.Valid {
-				u.DeletedAt = new(time.Time)
-				*u.DeletedAt = value.Time
 			}
 		case user.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -132,6 +136,12 @@ func (u *User) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				u.Password = value.String
 			}
+		case user.FieldActive:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field active", values[i])
+			} else if value.Valid {
+				u.Active = value.Bool
+			}
 		default:
 			u.selectValues.Set(columns[i], values[i])
 		}
@@ -148,6 +158,16 @@ func (u *User) Value(name string) (ent.Value, error) {
 // QueryFormResponses queries the "form_responses" edge of the User entity.
 func (u *User) QueryFormResponses() *FormResponseQuery {
 	return NewUserClient(u.config).QueryFormResponses(u)
+}
+
+// QueryActivationTokens queries the "activation_tokens" edge of the User entity.
+func (u *User) QueryActivationTokens() *ActivationTokenQuery {
+	return NewUserClient(u.config).QueryActivationTokens(u)
+}
+
+// QuerySessions queries the "sessions" edge of the User entity.
+func (u *User) QuerySessions() *SessionQuery {
+	return NewUserClient(u.config).QuerySessions(u)
 }
 
 // Update returns a builder for updating this User.
@@ -173,17 +193,6 @@ func (u *User) String() string {
 	var builder strings.Builder
 	builder.WriteString("User(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", u.ID))
-	builder.WriteString("created_at=")
-	builder.WriteString(u.CreatedAt.Format(time.ANSIC))
-	builder.WriteString(", ")
-	builder.WriteString("updated_at=")
-	builder.WriteString(u.UpdatedAt.Format(time.ANSIC))
-	builder.WriteString(", ")
-	if v := u.DeletedAt; v != nil {
-		builder.WriteString("deleted_at=")
-		builder.WriteString(v.Format(time.ANSIC))
-	}
-	builder.WriteString(", ")
 	builder.WriteString("name=")
 	builder.WriteString(u.Name)
 	builder.WriteString(", ")
@@ -196,6 +205,9 @@ func (u *User) String() string {
 	}
 	builder.WriteString(", ")
 	builder.WriteString("password=<sensitive>")
+	builder.WriteString(", ")
+	builder.WriteString("active=")
+	builder.WriteString(fmt.Sprintf("%v", u.Active))
 	builder.WriteByte(')')
 	return builder.String()
 }

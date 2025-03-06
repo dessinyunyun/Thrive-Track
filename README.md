@@ -13,6 +13,11 @@
 - cd database
 - go generate ./ent
 
+# How to generate update create table
+
+- cd database
+- cmd: go generate ./...
+
 # See Documentation :
 
 - After run the app, you can visit to {HOST}/{YOUR_PREFIX}/documentation/index.html

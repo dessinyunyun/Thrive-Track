@@ -6,14 +6,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go-gin/database/ent/activation_token"
 	"go-gin/database/ent/form_response"
 	"go-gin/database/ent/predicate"
+	"go-gin/database/ent/session"
 	"go-gin/database/ent/user"
-	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 )
 
 // UserUpdate is the builder for updating User entities.
@@ -26,32 +28,6 @@ type UserUpdate struct {
 // Where appends a list predicates to the UserUpdate builder.
 func (uu *UserUpdate) Where(ps ...predicate.User) *UserUpdate {
 	uu.mutation.Where(ps...)
-	return uu
-}
-
-// SetUpdatedAt sets the "updated_at" field.
-func (uu *UserUpdate) SetUpdatedAt(t time.Time) *UserUpdate {
-	uu.mutation.SetUpdatedAt(t)
-	return uu
-}
-
-// SetDeletedAt sets the "deleted_at" field.
-func (uu *UserUpdate) SetDeletedAt(t time.Time) *UserUpdate {
-	uu.mutation.SetDeletedAt(t)
-	return uu
-}
-
-// SetNillableDeletedAt sets the "deleted_at" field if the given value is not nil.
-func (uu *UserUpdate) SetNillableDeletedAt(t *time.Time) *UserUpdate {
-	if t != nil {
-		uu.SetDeletedAt(*t)
-	}
-	return uu
-}
-
-// ClearDeletedAt clears the value of the "deleted_at" field.
-func (uu *UserUpdate) ClearDeletedAt() *UserUpdate {
-	uu.mutation.ClearDeletedAt()
 	return uu
 }
 
@@ -117,6 +93,20 @@ func (uu *UserUpdate) SetNillablePassword(s *string) *UserUpdate {
 	return uu
 }
 
+// SetActive sets the "active" field.
+func (uu *UserUpdate) SetActive(b bool) *UserUpdate {
+	uu.mutation.SetActive(b)
+	return uu
+}
+
+// SetNillableActive sets the "active" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableActive(b *bool) *UserUpdate {
+	if b != nil {
+		uu.SetActive(*b)
+	}
+	return uu
+}
+
 // AddFormResponseIDs adds the "form_responses" edge to the Form_Response entity by IDs.
 func (uu *UserUpdate) AddFormResponseIDs(ids ...int) *UserUpdate {
 	uu.mutation.AddFormResponseIDs(ids...)
@@ -130,6 +120,44 @@ func (uu *UserUpdate) AddFormResponses(f ...*Form_Response) *UserUpdate {
 		ids[i] = f[i].ID
 	}
 	return uu.AddFormResponseIDs(ids...)
+}
+
+// SetActivationTokensID sets the "activation_tokens" edge to the Activation_token entity by ID.
+func (uu *UserUpdate) SetActivationTokensID(id uuid.UUID) *UserUpdate {
+	uu.mutation.SetActivationTokensID(id)
+	return uu
+}
+
+// SetNillableActivationTokensID sets the "activation_tokens" edge to the Activation_token entity by ID if the given value is not nil.
+func (uu *UserUpdate) SetNillableActivationTokensID(id *uuid.UUID) *UserUpdate {
+	if id != nil {
+		uu = uu.SetActivationTokensID(*id)
+	}
+	return uu
+}
+
+// SetActivationTokens sets the "activation_tokens" edge to the Activation_token entity.
+func (uu *UserUpdate) SetActivationTokens(a *Activation_token) *UserUpdate {
+	return uu.SetActivationTokensID(a.ID)
+}
+
+// SetSessionsID sets the "sessions" edge to the Session entity by ID.
+func (uu *UserUpdate) SetSessionsID(id uuid.UUID) *UserUpdate {
+	uu.mutation.SetSessionsID(id)
+	return uu
+}
+
+// SetNillableSessionsID sets the "sessions" edge to the Session entity by ID if the given value is not nil.
+func (uu *UserUpdate) SetNillableSessionsID(id *uuid.UUID) *UserUpdate {
+	if id != nil {
+		uu = uu.SetSessionsID(*id)
+	}
+	return uu
+}
+
+// SetSessions sets the "sessions" edge to the Session entity.
+func (uu *UserUpdate) SetSessions(s *Session) *UserUpdate {
+	return uu.SetSessionsID(s.ID)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -158,9 +186,20 @@ func (uu *UserUpdate) RemoveFormResponses(f ...*Form_Response) *UserUpdate {
 	return uu.RemoveFormResponseIDs(ids...)
 }
 
+// ClearActivationTokens clears the "activation_tokens" edge to the Activation_token entity.
+func (uu *UserUpdate) ClearActivationTokens() *UserUpdate {
+	uu.mutation.ClearActivationTokens()
+	return uu
+}
+
+// ClearSessions clears the "sessions" edge to the Session entity.
+func (uu *UserUpdate) ClearSessions() *UserUpdate {
+	uu.mutation.ClearSessions()
+	return uu
+}
+
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (uu *UserUpdate) Save(ctx context.Context) (int, error) {
-	uu.defaults()
 	return withHooks(ctx, uu.sqlSave, uu.mutation, uu.hooks)
 }
 
@@ -183,14 +222,6 @@ func (uu *UserUpdate) Exec(ctx context.Context) error {
 func (uu *UserUpdate) ExecX(ctx context.Context) {
 	if err := uu.Exec(ctx); err != nil {
 		panic(err)
-	}
-}
-
-// defaults sets the default values of the builder before save.
-func (uu *UserUpdate) defaults() {
-	if _, ok := uu.mutation.UpdatedAt(); !ok {
-		v := user.UpdateDefaultUpdatedAt()
-		uu.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -231,15 +262,6 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
-	if value, ok := uu.mutation.UpdatedAt(); ok {
-		_spec.SetField(user.FieldUpdatedAt, field.TypeTime, value)
-	}
-	if value, ok := uu.mutation.DeletedAt(); ok {
-		_spec.SetField(user.FieldDeletedAt, field.TypeTime, value)
-	}
-	if uu.mutation.DeletedAtCleared() {
-		_spec.ClearField(user.FieldDeletedAt, field.TypeTime)
-	}
 	if value, ok := uu.mutation.Name(); ok {
 		_spec.SetField(user.FieldName, field.TypeString, value)
 	}
@@ -254,6 +276,9 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := uu.mutation.Password(); ok {
 		_spec.SetField(user.FieldPassword, field.TypeString, value)
+	}
+	if value, ok := uu.mutation.Active(); ok {
+		_spec.SetField(user.FieldActive, field.TypeBool, value)
 	}
 	if uu.mutation.FormResponsesCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -300,6 +325,64 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if uu.mutation.ActivationTokensCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.ActivationTokensTable,
+			Columns: []string{user.ActivationTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(activation_token.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.ActivationTokensIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.ActivationTokensTable,
+			Columns: []string{user.ActivationTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(activation_token.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uu.mutation.SessionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.SessionsTable,
+			Columns: []string{user.SessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.SessionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.SessionsTable,
+			Columns: []string{user.SessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, uu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{user.Label}
@@ -318,32 +401,6 @@ type UserUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *UserMutation
-}
-
-// SetUpdatedAt sets the "updated_at" field.
-func (uuo *UserUpdateOne) SetUpdatedAt(t time.Time) *UserUpdateOne {
-	uuo.mutation.SetUpdatedAt(t)
-	return uuo
-}
-
-// SetDeletedAt sets the "deleted_at" field.
-func (uuo *UserUpdateOne) SetDeletedAt(t time.Time) *UserUpdateOne {
-	uuo.mutation.SetDeletedAt(t)
-	return uuo
-}
-
-// SetNillableDeletedAt sets the "deleted_at" field if the given value is not nil.
-func (uuo *UserUpdateOne) SetNillableDeletedAt(t *time.Time) *UserUpdateOne {
-	if t != nil {
-		uuo.SetDeletedAt(*t)
-	}
-	return uuo
-}
-
-// ClearDeletedAt clears the value of the "deleted_at" field.
-func (uuo *UserUpdateOne) ClearDeletedAt() *UserUpdateOne {
-	uuo.mutation.ClearDeletedAt()
-	return uuo
 }
 
 // SetName sets the "name" field.
@@ -408,6 +465,20 @@ func (uuo *UserUpdateOne) SetNillablePassword(s *string) *UserUpdateOne {
 	return uuo
 }
 
+// SetActive sets the "active" field.
+func (uuo *UserUpdateOne) SetActive(b bool) *UserUpdateOne {
+	uuo.mutation.SetActive(b)
+	return uuo
+}
+
+// SetNillableActive sets the "active" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableActive(b *bool) *UserUpdateOne {
+	if b != nil {
+		uuo.SetActive(*b)
+	}
+	return uuo
+}
+
 // AddFormResponseIDs adds the "form_responses" edge to the Form_Response entity by IDs.
 func (uuo *UserUpdateOne) AddFormResponseIDs(ids ...int) *UserUpdateOne {
 	uuo.mutation.AddFormResponseIDs(ids...)
@@ -421,6 +492,44 @@ func (uuo *UserUpdateOne) AddFormResponses(f ...*Form_Response) *UserUpdateOne {
 		ids[i] = f[i].ID
 	}
 	return uuo.AddFormResponseIDs(ids...)
+}
+
+// SetActivationTokensID sets the "activation_tokens" edge to the Activation_token entity by ID.
+func (uuo *UserUpdateOne) SetActivationTokensID(id uuid.UUID) *UserUpdateOne {
+	uuo.mutation.SetActivationTokensID(id)
+	return uuo
+}
+
+// SetNillableActivationTokensID sets the "activation_tokens" edge to the Activation_token entity by ID if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableActivationTokensID(id *uuid.UUID) *UserUpdateOne {
+	if id != nil {
+		uuo = uuo.SetActivationTokensID(*id)
+	}
+	return uuo
+}
+
+// SetActivationTokens sets the "activation_tokens" edge to the Activation_token entity.
+func (uuo *UserUpdateOne) SetActivationTokens(a *Activation_token) *UserUpdateOne {
+	return uuo.SetActivationTokensID(a.ID)
+}
+
+// SetSessionsID sets the "sessions" edge to the Session entity by ID.
+func (uuo *UserUpdateOne) SetSessionsID(id uuid.UUID) *UserUpdateOne {
+	uuo.mutation.SetSessionsID(id)
+	return uuo
+}
+
+// SetNillableSessionsID sets the "sessions" edge to the Session entity by ID if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableSessionsID(id *uuid.UUID) *UserUpdateOne {
+	if id != nil {
+		uuo = uuo.SetSessionsID(*id)
+	}
+	return uuo
+}
+
+// SetSessions sets the "sessions" edge to the Session entity.
+func (uuo *UserUpdateOne) SetSessions(s *Session) *UserUpdateOne {
+	return uuo.SetSessionsID(s.ID)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -449,6 +558,18 @@ func (uuo *UserUpdateOne) RemoveFormResponses(f ...*Form_Response) *UserUpdateOn
 	return uuo.RemoveFormResponseIDs(ids...)
 }
 
+// ClearActivationTokens clears the "activation_tokens" edge to the Activation_token entity.
+func (uuo *UserUpdateOne) ClearActivationTokens() *UserUpdateOne {
+	uuo.mutation.ClearActivationTokens()
+	return uuo
+}
+
+// ClearSessions clears the "sessions" edge to the Session entity.
+func (uuo *UserUpdateOne) ClearSessions() *UserUpdateOne {
+	uuo.mutation.ClearSessions()
+	return uuo
+}
+
 // Where appends a list predicates to the UserUpdate builder.
 func (uuo *UserUpdateOne) Where(ps ...predicate.User) *UserUpdateOne {
 	uuo.mutation.Where(ps...)
@@ -464,7 +585,6 @@ func (uuo *UserUpdateOne) Select(field string, fields ...string) *UserUpdateOne 
 
 // Save executes the query and returns the updated User entity.
 func (uuo *UserUpdateOne) Save(ctx context.Context) (*User, error) {
-	uuo.defaults()
 	return withHooks(ctx, uuo.sqlSave, uuo.mutation, uuo.hooks)
 }
 
@@ -487,14 +607,6 @@ func (uuo *UserUpdateOne) Exec(ctx context.Context) error {
 func (uuo *UserUpdateOne) ExecX(ctx context.Context) {
 	if err := uuo.Exec(ctx); err != nil {
 		panic(err)
-	}
-}
-
-// defaults sets the default values of the builder before save.
-func (uuo *UserUpdateOne) defaults() {
-	if _, ok := uuo.mutation.UpdatedAt(); !ok {
-		v := user.UpdateDefaultUpdatedAt()
-		uuo.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -552,15 +664,6 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			}
 		}
 	}
-	if value, ok := uuo.mutation.UpdatedAt(); ok {
-		_spec.SetField(user.FieldUpdatedAt, field.TypeTime, value)
-	}
-	if value, ok := uuo.mutation.DeletedAt(); ok {
-		_spec.SetField(user.FieldDeletedAt, field.TypeTime, value)
-	}
-	if uuo.mutation.DeletedAtCleared() {
-		_spec.ClearField(user.FieldDeletedAt, field.TypeTime)
-	}
 	if value, ok := uuo.mutation.Name(); ok {
 		_spec.SetField(user.FieldName, field.TypeString, value)
 	}
@@ -575,6 +678,9 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	}
 	if value, ok := uuo.mutation.Password(); ok {
 		_spec.SetField(user.FieldPassword, field.TypeString, value)
+	}
+	if value, ok := uuo.mutation.Active(); ok {
+		_spec.SetField(user.FieldActive, field.TypeBool, value)
 	}
 	if uuo.mutation.FormResponsesCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -614,6 +720,64 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(form_response.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.ActivationTokensCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.ActivationTokensTable,
+			Columns: []string{user.ActivationTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(activation_token.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.ActivationTokensIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.ActivationTokensTable,
+			Columns: []string{user.ActivationTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(activation_token.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.SessionsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.SessionsTable,
+			Columns: []string{user.SessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.SessionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.SessionsTable,
+			Columns: []string{user.SessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

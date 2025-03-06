@@ -11,6 +11,7 @@ import (
 	"go-gin/database/ent/questions"
 	"math"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -85,7 +86,7 @@ func (qq *QuestionsQuery) QueryHistoryAnswers() *HistoryAnswerQuery {
 // First returns the first Questions entity from the query.
 // Returns a *NotFoundError when no Questions was found.
 func (qq *QuestionsQuery) First(ctx context.Context) (*Questions, error) {
-	nodes, err := qq.Limit(1).All(setContextOp(ctx, qq.ctx, "First"))
+	nodes, err := qq.Limit(1).All(setContextOp(ctx, qq.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +109,7 @@ func (qq *QuestionsQuery) FirstX(ctx context.Context) *Questions {
 // Returns a *NotFoundError when no Questions ID was found.
 func (qq *QuestionsQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = qq.Limit(1).IDs(setContextOp(ctx, qq.ctx, "FirstID")); err != nil {
+	if ids, err = qq.Limit(1).IDs(setContextOp(ctx, qq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -131,7 +132,7 @@ func (qq *QuestionsQuery) FirstIDX(ctx context.Context) int {
 // Returns a *NotSingularError when more than one Questions entity is found.
 // Returns a *NotFoundError when no Questions entities are found.
 func (qq *QuestionsQuery) Only(ctx context.Context) (*Questions, error) {
-	nodes, err := qq.Limit(2).All(setContextOp(ctx, qq.ctx, "Only"))
+	nodes, err := qq.Limit(2).All(setContextOp(ctx, qq.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +160,7 @@ func (qq *QuestionsQuery) OnlyX(ctx context.Context) *Questions {
 // Returns a *NotFoundError when no entities are found.
 func (qq *QuestionsQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
-	if ids, err = qq.Limit(2).IDs(setContextOp(ctx, qq.ctx, "OnlyID")); err != nil {
+	if ids, err = qq.Limit(2).IDs(setContextOp(ctx, qq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -184,7 +185,7 @@ func (qq *QuestionsQuery) OnlyIDX(ctx context.Context) int {
 
 // All executes the query and returns a list of QuestionsSlice.
 func (qq *QuestionsQuery) All(ctx context.Context) ([]*Questions, error) {
-	ctx = setContextOp(ctx, qq.ctx, "All")
+	ctx = setContextOp(ctx, qq.ctx, ent.OpQueryAll)
 	if err := qq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
@@ -206,7 +207,7 @@ func (qq *QuestionsQuery) IDs(ctx context.Context) (ids []int, err error) {
 	if qq.ctx.Unique == nil && qq.path != nil {
 		qq.Unique(true)
 	}
-	ctx = setContextOp(ctx, qq.ctx, "IDs")
+	ctx = setContextOp(ctx, qq.ctx, ent.OpQueryIDs)
 	if err = qq.Select(questions.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -224,7 +225,7 @@ func (qq *QuestionsQuery) IDsX(ctx context.Context) []int {
 
 // Count returns the count of the given query.
 func (qq *QuestionsQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, qq.ctx, "Count")
+	ctx = setContextOp(ctx, qq.ctx, ent.OpQueryCount)
 	if err := qq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
@@ -242,7 +243,7 @@ func (qq *QuestionsQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (qq *QuestionsQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, qq.ctx, "Exist")
+	ctx = setContextOp(ctx, qq.ctx, ent.OpQueryExist)
 	switch _, err := qq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
@@ -528,7 +529,7 @@ func (qgb *QuestionsGroupBy) Aggregate(fns ...AggregateFunc) *QuestionsGroupBy {
 
 // Scan applies the selector query and scans the result into the given value.
 func (qgb *QuestionsGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, qgb.build.ctx, "GroupBy")
+	ctx = setContextOp(ctx, qgb.build.ctx, ent.OpQueryGroupBy)
 	if err := qgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
@@ -576,7 +577,7 @@ func (qs *QuestionsSelect) Aggregate(fns ...AggregateFunc) *QuestionsSelect {
 
 // Scan applies the selector query and scans the result into the given value.
 func (qs *QuestionsSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, qs.ctx, "Select")
+	ctx = setContextOp(ctx, qs.ctx, ent.OpQuerySelect)
 	if err := qs.prepareQuery(ctx); err != nil {
 		return err
 	}

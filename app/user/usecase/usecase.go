@@ -4,6 +4,7 @@ import (
 	"context"
 	"go-gin/app/tools"
 	"go-gin/app/user"
+	"go-gin/database/ent"
 
 	"github.com/gin-gonic/gin"
 	googleUUID "github.com/google/uuid"
@@ -40,7 +41,7 @@ func (uc *UserUsecase) GetAllUser(c *gin.Context) ([]*user.UserResponse, *tools.
 	return result, pagination, nil
 }
 
-func (uc *UserUsecase) GetDetailUser(c *gin.Context) (*user.UserResponse, error) {
+func (uc *UserUsecase) GetDetailUser(c *gin.Context) (*ent.User, error) {
 	uuid, err := googleUUID.Parse(c.Param("id"))
 	if err != nil {
 		return nil, err
@@ -61,7 +62,7 @@ func (uc *UserUsecase) CreateUser(c *gin.Context) error {
 		return err
 	}
 
-	err = uc.repo.CreateUser(uc.ctx, createUser)
+	_, err = uc.repo.CreateUser(uc.ctx, createUser)
 	if err != nil {
 		return err
 	}

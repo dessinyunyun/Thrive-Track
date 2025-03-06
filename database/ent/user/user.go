@@ -3,8 +3,6 @@
 package user
 
 import (
-	"time"
-
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/google/uuid"
@@ -15,12 +13,6 @@ const (
 	Label = "user"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
-	// FieldCreatedAt holds the string denoting the created_at field in the database.
-	FieldCreatedAt = "created_at"
-	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
-	FieldUpdatedAt = "updated_at"
-	// FieldDeletedAt holds the string denoting the deleted_at field in the database.
-	FieldDeletedAt = "deleted_at"
 	// FieldName holds the string denoting the name field in the database.
 	FieldName = "name"
 	// FieldUsername holds the string denoting the username field in the database.
@@ -29,8 +21,14 @@ const (
 	FieldEmail = "email"
 	// FieldPassword holds the string denoting the password field in the database.
 	FieldPassword = "password"
+	// FieldActive holds the string denoting the active field in the database.
+	FieldActive = "active"
 	// EdgeFormResponses holds the string denoting the form_responses edge name in mutations.
 	EdgeFormResponses = "form_responses"
+	// EdgeActivationTokens holds the string denoting the activation_tokens edge name in mutations.
+	EdgeActivationTokens = "activation_tokens"
+	// EdgeSessions holds the string denoting the sessions edge name in mutations.
+	EdgeSessions = "sessions"
 	// Table holds the table name of the user in the database.
 	Table = "users"
 	// FormResponsesTable is the table that holds the form_responses relation/edge.
@@ -40,18 +38,30 @@ const (
 	FormResponsesInverseTable = "form_responses"
 	// FormResponsesColumn is the table column denoting the form_responses relation/edge.
 	FormResponsesColumn = "user_id"
+	// ActivationTokensTable is the table that holds the activation_tokens relation/edge.
+	ActivationTokensTable = "activation_tokens"
+	// ActivationTokensInverseTable is the table name for the Activation_token entity.
+	// It exists in this package in order to avoid circular dependency with the "activation_token" package.
+	ActivationTokensInverseTable = "activation_tokens"
+	// ActivationTokensColumn is the table column denoting the activation_tokens relation/edge.
+	ActivationTokensColumn = "user_id"
+	// SessionsTable is the table that holds the sessions relation/edge.
+	SessionsTable = "sessions"
+	// SessionsInverseTable is the table name for the Session entity.
+	// It exists in this package in order to avoid circular dependency with the "session" package.
+	SessionsInverseTable = "sessions"
+	// SessionsColumn is the table column denoting the sessions relation/edge.
+	SessionsColumn = "user_id"
 )
 
 // Columns holds all SQL columns for user fields.
 var Columns = []string{
 	FieldID,
-	FieldCreatedAt,
-	FieldUpdatedAt,
-	FieldDeletedAt,
 	FieldName,
 	FieldUsername,
 	FieldEmail,
 	FieldPassword,
+	FieldActive,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -65,12 +75,6 @@ func ValidColumn(column string) bool {
 }
 
 var (
-	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
-	DefaultCreatedAt func() time.Time
-	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
-	DefaultUpdatedAt func() time.Time
-	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
-	UpdateDefaultUpdatedAt func() time.Time
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
 	// UsernameValidator is a validator for the "username" field. It is called by the builders before save.
@@ -79,6 +83,8 @@ var (
 	EmailValidator func(string) error
 	// PasswordValidator is a validator for the "password" field. It is called by the builders before save.
 	PasswordValidator func(string) error
+	// DefaultActive holds the default value on creation for the "active" field.
+	DefaultActive bool
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -89,21 +95,6 @@ type OrderOption func(*sql.Selector)
 // ByID orders the results by the id field.
 func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
-}
-
-// ByCreatedAt orders the results by the created_at field.
-func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
-}
-
-// ByUpdatedAt orders the results by the updated_at field.
-func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
-}
-
-// ByDeletedAt orders the results by the deleted_at field.
-func ByDeletedAt(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldDeletedAt, opts...).ToFunc()
 }
 
 // ByName orders the results by the name field.
@@ -126,6 +117,11 @@ func ByPassword(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPassword, opts...).ToFunc()
 }
 
+// ByActive orders the results by the active field.
+func ByActive(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldActive, opts...).ToFunc()
+}
+
 // ByFormResponsesCount orders the results by form_responses count.
 func ByFormResponsesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -139,10 +135,38 @@ func ByFormResponses(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newFormResponsesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByActivationTokensField orders the results by activation_tokens field.
+func ByActivationTokensField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newActivationTokensStep(), sql.OrderByField(field, opts...))
+	}
+}
+
+// BySessionsField orders the results by sessions field.
+func BySessionsField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSessionsStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newFormResponsesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(FormResponsesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, FormResponsesTable, FormResponsesColumn),
+	)
+}
+func newActivationTokensStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ActivationTokensInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, ActivationTokensTable, ActivationTokensColumn),
+	)
+}
+func newSessionsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SessionsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, SessionsTable, SessionsColumn),
 	)
 }

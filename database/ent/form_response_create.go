@@ -187,7 +187,7 @@ func (frc *FormResponseCreate) check() error {
 			return &ValidationError{Name: "depression_level", err: fmt.Errorf(`ent: validator failed for field "Form_Response.depression_level": %w`, err)}
 		}
 	}
-	if _, ok := frc.mutation.UserID(); !ok {
+	if len(frc.mutation.UserIDs()) == 0 {
 		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "Form_Response.user"`)}
 	}
 	return nil

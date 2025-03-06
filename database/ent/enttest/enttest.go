@@ -4,6 +4,7 @@ package enttest
 
 import (
 	"context"
+
 	"go-gin/database/ent"
 	// required by schema hooks.
 	_ "go-gin/database/ent/runtime"

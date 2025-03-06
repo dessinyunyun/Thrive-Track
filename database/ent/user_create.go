@@ -6,9 +6,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go-gin/database/ent/activation_token"
 	"go-gin/database/ent/form_response"
+	"go-gin/database/ent/session"
 	"go-gin/database/ent/user"
-	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -20,48 +21,6 @@ type UserCreate struct {
 	config
 	mutation *UserMutation
 	hooks    []Hook
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (uc *UserCreate) SetCreatedAt(t time.Time) *UserCreate {
-	uc.mutation.SetCreatedAt(t)
-	return uc
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (uc *UserCreate) SetNillableCreatedAt(t *time.Time) *UserCreate {
-	if t != nil {
-		uc.SetCreatedAt(*t)
-	}
-	return uc
-}
-
-// SetUpdatedAt sets the "updated_at" field.
-func (uc *UserCreate) SetUpdatedAt(t time.Time) *UserCreate {
-	uc.mutation.SetUpdatedAt(t)
-	return uc
-}
-
-// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
-func (uc *UserCreate) SetNillableUpdatedAt(t *time.Time) *UserCreate {
-	if t != nil {
-		uc.SetUpdatedAt(*t)
-	}
-	return uc
-}
-
-// SetDeletedAt sets the "deleted_at" field.
-func (uc *UserCreate) SetDeletedAt(t time.Time) *UserCreate {
-	uc.mutation.SetDeletedAt(t)
-	return uc
-}
-
-// SetNillableDeletedAt sets the "deleted_at" field if the given value is not nil.
-func (uc *UserCreate) SetNillableDeletedAt(t *time.Time) *UserCreate {
-	if t != nil {
-		uc.SetDeletedAt(*t)
-	}
-	return uc
 }
 
 // SetName sets the "name" field.
@@ -96,6 +55,20 @@ func (uc *UserCreate) SetPassword(s string) *UserCreate {
 	return uc
 }
 
+// SetActive sets the "active" field.
+func (uc *UserCreate) SetActive(b bool) *UserCreate {
+	uc.mutation.SetActive(b)
+	return uc
+}
+
+// SetNillableActive sets the "active" field if the given value is not nil.
+func (uc *UserCreate) SetNillableActive(b *bool) *UserCreate {
+	if b != nil {
+		uc.SetActive(*b)
+	}
+	return uc
+}
+
 // SetID sets the "id" field.
 func (uc *UserCreate) SetID(u uuid.UUID) *UserCreate {
 	uc.mutation.SetID(u)
@@ -123,6 +96,44 @@ func (uc *UserCreate) AddFormResponses(f ...*Form_Response) *UserCreate {
 		ids[i] = f[i].ID
 	}
 	return uc.AddFormResponseIDs(ids...)
+}
+
+// SetActivationTokensID sets the "activation_tokens" edge to the Activation_token entity by ID.
+func (uc *UserCreate) SetActivationTokensID(id uuid.UUID) *UserCreate {
+	uc.mutation.SetActivationTokensID(id)
+	return uc
+}
+
+// SetNillableActivationTokensID sets the "activation_tokens" edge to the Activation_token entity by ID if the given value is not nil.
+func (uc *UserCreate) SetNillableActivationTokensID(id *uuid.UUID) *UserCreate {
+	if id != nil {
+		uc = uc.SetActivationTokensID(*id)
+	}
+	return uc
+}
+
+// SetActivationTokens sets the "activation_tokens" edge to the Activation_token entity.
+func (uc *UserCreate) SetActivationTokens(a *Activation_token) *UserCreate {
+	return uc.SetActivationTokensID(a.ID)
+}
+
+// SetSessionsID sets the "sessions" edge to the Session entity by ID.
+func (uc *UserCreate) SetSessionsID(id uuid.UUID) *UserCreate {
+	uc.mutation.SetSessionsID(id)
+	return uc
+}
+
+// SetNillableSessionsID sets the "sessions" edge to the Session entity by ID if the given value is not nil.
+func (uc *UserCreate) SetNillableSessionsID(id *uuid.UUID) *UserCreate {
+	if id != nil {
+		uc = uc.SetSessionsID(*id)
+	}
+	return uc
+}
+
+// SetSessions sets the "sessions" edge to the Session entity.
+func (uc *UserCreate) SetSessions(s *Session) *UserCreate {
+	return uc.SetSessionsID(s.ID)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -160,13 +171,9 @@ func (uc *UserCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (uc *UserCreate) defaults() {
-	if _, ok := uc.mutation.CreatedAt(); !ok {
-		v := user.DefaultCreatedAt()
-		uc.mutation.SetCreatedAt(v)
-	}
-	if _, ok := uc.mutation.UpdatedAt(); !ok {
-		v := user.DefaultUpdatedAt()
-		uc.mutation.SetUpdatedAt(v)
+	if _, ok := uc.mutation.Active(); !ok {
+		v := user.DefaultActive
+		uc.mutation.SetActive(v)
 	}
 	if _, ok := uc.mutation.ID(); !ok {
 		v := user.DefaultID()
@@ -176,12 +183,6 @@ func (uc *UserCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (uc *UserCreate) check() error {
-	if _, ok := uc.mutation.CreatedAt(); !ok {
-		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "User.created_at"`)}
-	}
-	if _, ok := uc.mutation.UpdatedAt(); !ok {
-		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "User.updated_at"`)}
-	}
 	if _, ok := uc.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "User.name"`)}
 	}
@@ -210,6 +211,9 @@ func (uc *UserCreate) check() error {
 		if err := user.PasswordValidator(v); err != nil {
 			return &ValidationError{Name: "password", err: fmt.Errorf(`ent: validator failed for field "User.password": %w`, err)}
 		}
+	}
+	if _, ok := uc.mutation.Active(); !ok {
+		return &ValidationError{Name: "active", err: errors.New(`ent: missing required field "User.active"`)}
 	}
 	return nil
 }
@@ -246,18 +250,6 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
-	if value, ok := uc.mutation.CreatedAt(); ok {
-		_spec.SetField(user.FieldCreatedAt, field.TypeTime, value)
-		_node.CreatedAt = value
-	}
-	if value, ok := uc.mutation.UpdatedAt(); ok {
-		_spec.SetField(user.FieldUpdatedAt, field.TypeTime, value)
-		_node.UpdatedAt = value
-	}
-	if value, ok := uc.mutation.DeletedAt(); ok {
-		_spec.SetField(user.FieldDeletedAt, field.TypeTime, value)
-		_node.DeletedAt = &value
-	}
 	if value, ok := uc.mutation.Name(); ok {
 		_spec.SetField(user.FieldName, field.TypeString, value)
 		_node.Name = value
@@ -274,6 +266,10 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		_spec.SetField(user.FieldPassword, field.TypeString, value)
 		_node.Password = value
 	}
+	if value, ok := uc.mutation.Active(); ok {
+		_spec.SetField(user.FieldActive, field.TypeBool, value)
+		_node.Active = value
+	}
 	if nodes := uc.mutation.FormResponsesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -283,6 +279,38 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(form_response.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.ActivationTokensIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.ActivationTokensTable,
+			Columns: []string{user.ActivationTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(activation_token.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.SessionsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.SessionsTable,
+			Columns: []string{user.SessionsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

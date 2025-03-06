@@ -206,7 +206,7 @@ func (fru *FormResponseUpdate) check() error {
 			return &ValidationError{Name: "depression_level", err: fmt.Errorf(`ent: validator failed for field "Form_Response.depression_level": %w`, err)}
 		}
 	}
-	if _, ok := fru.mutation.UserID(); fru.mutation.UserCleared() && !ok {
+	if fru.mutation.UserCleared() && len(fru.mutation.UserIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Form_Response.user"`)
 	}
 	return nil
@@ -524,7 +524,7 @@ func (fruo *FormResponseUpdateOne) check() error {
 			return &ValidationError{Name: "depression_level", err: fmt.Errorf(`ent: validator failed for field "Form_Response.depression_level": %w`, err)}
 		}
 	}
-	if _, ok := fruo.mutation.UserID(); fruo.mutation.UserCleared() && !ok {
+	if fruo.mutation.UserCleared() && len(fruo.mutation.UserIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "Form_Response.user"`)
 	}
 	return nil
