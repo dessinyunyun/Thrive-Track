@@ -12,6 +12,8 @@ import (
 	"os"
 	"time"
 
+	_ "time/tzdata"
+
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"

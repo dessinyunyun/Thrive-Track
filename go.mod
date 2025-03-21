@@ -4,7 +4,6 @@ go 1.23.0
 
 require (
 	entgo.io/ent v0.14.1
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-playground/validator/v10 v10.25.0
 	github.com/go-sql-driver/mysql v1.9.0
@@ -55,6 +54,7 @@ require (
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/goccy/go-json v0.10.2 // indirect
+	github.com/golang-jwt/jwt/v4 v4.5.1
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/hashicorp/hcl/v2 v2.13.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect

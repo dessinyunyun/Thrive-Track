@@ -1,0 +1,82 @@
+# Tahap 1: Membangun aplikasi
+FROM golang:1.23.5-alpine AS builder
+
+# Mengatur direktori kerja di dalam container
+WORKDIR /app
+
+# Menyalin file go.mod dan go.sum
+COPY go.mod go.sum ./
+
+# Mengunduh dependensi Go
+RUN go mod download
+
+# Menyalin kode sumber aplikasi
+COPY . .
+
+# Instal tzdata untuk mendukung zona waktu
+RUN apk add --no-cache tzdata
+
+# Membangun aplikasi Go
+RUN go build -o go-gin
+
+# Tahap 2: Menyiapkan image runtime yang minimal
+FROM alpine:latest
+
+# Menginstal sertifikat CA untuk koneksi HTTPS
+RUN apk --no-cache add ca-certificates
+
+# Mengatur direktori kerja di dalam container
+WORKDIR /app
+
+# Salin data zona waktu dari tahap builder
+COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
+
+# Menyalin binary dari tahap builder
+COPY --from=builder /app/go-gin .
+
+
+# Atur zona waktu melalui variabel lingkungan
+ENV TZ=Asia/Jakarta
+
+# Mengekspos port yang digunakan aplikasi
+EXPOSE 8000
+
+# Menjalankan aplikasi
+ENTRYPOINT ["./go-gin"]
+
+
+
+
+#Membangun Docker Image:
+###########docker build -t nama_image:tag .
+#Perintah ini akan membangun Docker image berdasarkan Dockerfile yang ada di direktori saat ini (.). Opsi -t digunakan untuk memberikan nama (nama_image) dan tag (tag) pada image yang dibangun. Misalnya, jika Anda ingin menamai image Anda sebagai appgo dengan tag 1.0, perintahnya menjadi:
+
+ 
+
+
+#Menjalankan Docker Container:
+#docker run -d --name nama_container -p 8000:8000 nama_image:tag
+#Perintah ini akan menjalankan container baru dari image yang telah Anda bangun. Berikut penjelasan opsi yang digunakan:
+
+#-d menjalankan container dalam mode detached, sehingga berjalan di latar belakang.​
+#--name memberikan nama khusus untuk container Anda (nama_container).​
+#-p 8000:8000 memetakan port 8000 di host ke port 8000 di dalam container.​
+#Dewaweb
+#Misalnya, untuk menjalankan container dengan nama appgo_container dari image appgo:1.0, perintahnya menjadi:
+
+#docker run -d --name appgo_container -p 8000:8000 appgo:1.0
+#Setelah menjalankan perintah ini, Anda dapat memeriksa container yang sedang berjalan dengan:
+
+#docker ps
+#Perintah ini akan menampilkan daftar container yang aktif beserta informasi seperti CONTAINER ID, IMAGE, COMMAND, CREATED, STATUS, PORTS, dan NAMES.
+
+
+
+
+#Mengakses Aplikasi:
+#Setelah container berjalan, Anda dapat mengakses aplikasi Go Anda melalui browser atau alat HTTP lainnya dengan mengunjungi URL:
+    
+#http://localhost:8000
+#Pastikan port yang Anda gunakan sesuai dengan yang telah Anda tetapkan dalam perintah docker run.
+    
+#Dengan mengikuti langkah-langkah di atas, Anda dapat membangun dan menjalankan aplikasi Go Anda dalam lingkungan Docker dengan efisien.​
