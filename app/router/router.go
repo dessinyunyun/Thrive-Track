@@ -45,6 +45,10 @@ import (
 	mailerHandler "go-gin/app/mailer/handler"
 	mailerRepo "go-gin/app/mailer/repository"
 	mailerUC "go-gin/app/mailer/usecase"
+
+	qcHandler "go-gin/app/question_categories/handler"
+	qcRepo "go-gin/app/question_categories/repository"
+	qcUC "go-gin/app/question_categories/usecase"
 )
 
 type Handlers struct {
@@ -78,16 +82,18 @@ func (h *Handlers) Routes() {
 	FormResponseRepo := formResponseRepo.NewFormResponseRepository(h.DB)
 	HistoryAnswerRepo := historyAnswerRepo.NewHistoryAnswerRepository(h.DB)
 	MailAnswerRepo := mailerRepo.NewEmailRepository(h.Gomail, h.Redis)
-	authRepo := authRepo.NewAuthRepository(h.DB)
+	AuthRepo := authRepo.NewAuthRepository(h.DB)
+	CqRepo := qcRepo.NewCategoryQuestionRepository(h.DB)
 
 	// Usecase
 	ExampleUC := exampleUC.NewExampleUsecase(ExampleRepo, h.Ctx)
 	UserUC := userUC.NewUserUsecase(UserRepo, h.Ctx)
-	questionUC := questionUC.NewQuestionUsecase(QuestionRepo, h.Ctx)
+	questionUC := questionUC.NewQuestionUsecase(QuestionRepo, CqRepo, h.Ctx)
 	formResponseUC := formResponseUC.NewFormResponseUsecase(FormResponseRepo, h.Ctx)
 	HistoryAnswerUC := historyAnswerUC.NewHistoryAnswerUsecase(HistoryAnswerRepo, h.Ctx)
 	MailerUC := mailerUC.NewEmailUsecase(MailAnswerRepo, h.Redis, h.Ctx)
-	AuthUC := authUC.NewAuthUsecase(authRepo, UserRepo, h.Ctx, MailerUC)
+	AuthUC := authUC.NewAuthUsecase(AuthRepo, UserRepo, h.Ctx, MailerUC)
+	CqUC := qcUC.NewCategoryQuestionUsecase(CqRepo, h.Ctx)
 
 	// Handler
 	exampleHandler.ExampleRoute(ExampleUC, v1, h.Log)
@@ -97,6 +103,7 @@ func (h *Handlers) Routes() {
 	formResponseHandler.FormResponseRoute(formResponseUC, v1, h.Log)
 	historyAnswerHandler.HistoryAnswerRoute(HistoryAnswerUC, v1, h.Log)
 	mailerHandler.MailerRoute(MailerUC, v1, h.Log)
+	qcHandler.CategoryQuestionRoute(CqUC, v1, h.Log)
 }
 
 func routine() {

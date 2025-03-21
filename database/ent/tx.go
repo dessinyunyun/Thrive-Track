@@ -14,18 +14,18 @@ type Tx struct {
 	config
 	// Activation_token is the client for interacting with the Activation_token builders.
 	Activation_token *ActivationTokenClient
-	// Category_Questions is the client for interacting with the Category_Questions builders.
-	Category_Questions *CategoryQuestionsClient
 	// Example is the client for interacting with the Example builders.
 	Example *ExampleClient
 	// Form_Response is the client for interacting with the Form_Response builders.
 	Form_Response *FormResponseClient
 	// History_Answer is the client for interacting with the History_Answer builders.
 	History_Answer *HistoryAnswerClient
-	// Questions is the client for interacting with the Questions builders.
-	Questions *QuestionsClient
-	// Session is the client for interacting with the Session builders.
-	Session *SessionClient
+	// Question is the client for interacting with the Question builders.
+	Question *QuestionClient
+	// Question_Category is the client for interacting with the Question_Category builders.
+	Question_Category *QuestionCategoryClient
+	// Token is the client for interacting with the Token builders.
+	Token *TokenClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 
@@ -160,12 +160,12 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.Activation_token = NewActivationTokenClient(tx.config)
-	tx.Category_Questions = NewCategoryQuestionsClient(tx.config)
 	tx.Example = NewExampleClient(tx.config)
 	tx.Form_Response = NewFormResponseClient(tx.config)
 	tx.History_Answer = NewHistoryAnswerClient(tx.config)
-	tx.Questions = NewQuestionsClient(tx.config)
-	tx.Session = NewSessionClient(tx.config)
+	tx.Question = NewQuestionClient(tx.config)
+	tx.Question_Category = NewQuestionCategoryClient(tx.config)
+	tx.Token = NewTokenClient(tx.config)
 	tx.User = NewUserClient(tx.config)
 }
 

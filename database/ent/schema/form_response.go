@@ -15,20 +15,20 @@ type Form_Response struct {
 // Fields of the Form_Response.
 func (Form_Response) Fields() []ent.Field {
 	return []ent.Field{
-		field.UUID("user_id", uuid.UUID{}),             // Foreign key ke User
-		field.Uint8("total_score").Max(100).Default(0), // Total skor
-		field.String("depression_level").MaxLen(100).NotEmpty(),
+		field.UUID("user_id", uuid.UUID{}),                      // Foreign key ke User
+		field.Uint8("total_score").Max(100).Default(0),          // Total skor
+		field.String("depression_level").MaxLen(100).NotEmpty(), // Tingkat depresi
 	}
 }
 
 // Edges of the Form_Response.
 func (Form_Response) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("history_answers", History_Answer.Type), // Menyimpan foreign key di History_Answer
+		edge.To("history_answers", History_Answer.Type), // Relasi ke History_Answer
 		edge.From("user", User.Type).
 			Ref("form_responses").
-			Unique().
-			Required().
+			Unique().   // Satu Form_Response hanya terkait dengan satu User
+			Required(). // User wajib ada
 			Field("user_id"),
 	}
 }

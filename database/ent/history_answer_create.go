@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"go-gin/database/ent/form_response"
 	"go-gin/database/ent/history_answer"
-	"go-gin/database/ent/questions"
+	"go-gin/database/ent/question"
 	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -87,8 +87,8 @@ func (hac *HistoryAnswerCreate) SetFormResponse(f *Form_Response) *HistoryAnswer
 	return hac.SetFormResponseID(f.ID)
 }
 
-// SetQuestion sets the "question" edge to the Questions entity.
-func (hac *HistoryAnswerCreate) SetQuestion(q *Questions) *HistoryAnswerCreate {
+// SetQuestion sets the "question" edge to the Question entity.
+func (hac *HistoryAnswerCreate) SetQuestion(q *Question) *HistoryAnswerCreate {
 	return hac.SetQuestionID(q.ID)
 }
 
@@ -242,7 +242,7 @@ func (hac *HistoryAnswerCreate) createSpec() (*History_Answer, *sqlgraph.CreateS
 			Columns: []string{history_answer.QuestionColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(questions.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(question.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"fmt"
 	"go-gin/app/auth"
 	"go-gin/database/ent"
 	"os"
@@ -45,13 +46,29 @@ func (uc *AuthUsecase) GenerateJWT(user ent.User, expiredToken time.Duration, ex
 		return nil, err
 	}
 
-	return &auth.Authenticate{
+	now := time.Now()
+	expiredTokenTime := now.Add(expiredToken)
+	expiredRefreshTokenTime := now.Add(expiredRefreshToken)
+
+	fmt.Println("expiredRefreshToken", expiredRefreshToken)
+	fmt.Println("expiredTokenTime", expiredTokenTime)
+
+	res := &auth.Authenticate{
 		User: &user,
-		AccessToken: auth.JWT{
-			Token:        tokenString,
-			RefreshToken: refreshTokenString,
+		Token: auth.Token{
+			AccessToken:         tokenString,
+			RefreshToken:        refreshTokenString,
+			AccessTokenExpired:  expiredTokenTime,
+			RefreshTokenExpired: expiredRefreshTokenTime,
 		},
-	}, nil
+	}
+
+	err = uc.repo.CreateToken(uc.ctx, user.ID, res.Token)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }
 
 type ActivationClaims struct {
@@ -130,6 +147,15 @@ func (uc *AuthUsecase) GetDetailAT(userID googleUUID.UUID) (*ent.Activation_toke
 
 	if res == nil {
 		return nil, auth.ErrATnotFound
+	}
+
+	return res, nil
+}
+
+func (uc *AuthUsecase) GetDetailToken(userID googleUUID.UUID) (*ent.Token, error) {
+	res, err := uc.repo.GetDetailToken(uc.ctx, userID)
+	if err != nil {
+		return nil, err
 	}
 
 	return res, nil

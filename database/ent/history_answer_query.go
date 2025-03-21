@@ -8,7 +8,7 @@ import (
 	"go-gin/database/ent/form_response"
 	"go-gin/database/ent/history_answer"
 	"go-gin/database/ent/predicate"
-	"go-gin/database/ent/questions"
+	"go-gin/database/ent/question"
 	"math"
 
 	"entgo.io/ent"
@@ -25,7 +25,7 @@ type HistoryAnswerQuery struct {
 	inters           []Interceptor
 	predicates       []predicate.History_Answer
 	withFormResponse *FormResponseQuery
-	withQuestion     *QuestionsQuery
+	withQuestion     *QuestionQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -85,8 +85,8 @@ func (haq *HistoryAnswerQuery) QueryFormResponse() *FormResponseQuery {
 }
 
 // QueryQuestion chains the current query on the "question" edge.
-func (haq *HistoryAnswerQuery) QueryQuestion() *QuestionsQuery {
-	query := (&QuestionsClient{config: haq.config}).Query()
+func (haq *HistoryAnswerQuery) QueryQuestion() *QuestionQuery {
+	query := (&QuestionClient{config: haq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := haq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -97,7 +97,7 @@ func (haq *HistoryAnswerQuery) QueryQuestion() *QuestionsQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(history_answer.Table, history_answer.FieldID, selector),
-			sqlgraph.To(questions.Table, questions.FieldID),
+			sqlgraph.To(question.Table, question.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, history_answer.QuestionTable, history_answer.QuestionColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(haq.driver.Dialect(), step)
@@ -319,8 +319,8 @@ func (haq *HistoryAnswerQuery) WithFormResponse(opts ...func(*FormResponseQuery)
 
 // WithQuestion tells the query-builder to eager-load the nodes that are connected to
 // the "question" edge. The optional arguments are used to configure the query builder of the edge.
-func (haq *HistoryAnswerQuery) WithQuestion(opts ...func(*QuestionsQuery)) *HistoryAnswerQuery {
-	query := (&QuestionsClient{config: haq.config}).Query()
+func (haq *HistoryAnswerQuery) WithQuestion(opts ...func(*QuestionQuery)) *HistoryAnswerQuery {
+	query := (&QuestionClient{config: haq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -437,7 +437,7 @@ func (haq *HistoryAnswerQuery) sqlAll(ctx context.Context, hooks ...queryHook) (
 	}
 	if query := haq.withQuestion; query != nil {
 		if err := haq.loadQuestion(ctx, query, nodes, nil,
-			func(n *History_Answer, e *Questions) { n.Edges.Question = e }); err != nil {
+			func(n *History_Answer, e *Question) { n.Edges.Question = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -473,7 +473,7 @@ func (haq *HistoryAnswerQuery) loadFormResponse(ctx context.Context, query *Form
 	}
 	return nil
 }
-func (haq *HistoryAnswerQuery) loadQuestion(ctx context.Context, query *QuestionsQuery, nodes []*History_Answer, init func(*History_Answer), assign func(*History_Answer, *Questions)) error {
+func (haq *HistoryAnswerQuery) loadQuestion(ctx context.Context, query *QuestionQuery, nodes []*History_Answer, init func(*History_Answer), assign func(*History_Answer, *Question)) error {
 	ids := make([]int, 0, len(nodes))
 	nodeids := make(map[int][]*History_Answer)
 	for i := range nodes {
@@ -486,7 +486,7 @@ func (haq *HistoryAnswerQuery) loadQuestion(ctx context.Context, query *Question
 	if len(ids) == 0 {
 		return nil
 	}
-	query.Where(questions.IDIn(ids...))
+	query.Where(question.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err

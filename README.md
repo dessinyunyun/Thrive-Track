@@ -20,4 +20,5 @@
 
 # See Documentation :
 
+- cmd: swag init
 - After run the app, you can visit to {HOST}/{YOUR_PREFIX}/documentation/index.html

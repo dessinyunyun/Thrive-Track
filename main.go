@@ -8,7 +8,9 @@ import (
 	"go-gin/mail"
 	"go-gin/redis"
 	"go-gin/worker"
+	"log"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -20,6 +22,14 @@ func init() {
 }
 
 func main() {
+	loc, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		log.Fatalf("Gagal memuat lokasi: %v", err)
+	}
+
+	// Menetapkan zona waktu lokal
+	time.Local = loc
+
 	log := logrus.NewEntry(logrus.StandardLogger())
 	docs.SwaggerInfo.BasePath = "/" + os.Getenv("PREFIX_API")
 

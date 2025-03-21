@@ -20,18 +20,6 @@ func (f Activation_tokenFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.V
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ActivationTokenMutation", m)
 }
 
-// The Category_QuestionsFunc type is an adapter to allow the use of ordinary
-// function as Category_Questions mutator.
-type Category_QuestionsFunc func(context.Context, *ent.CategoryQuestionsMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f Category_QuestionsFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.CategoryQuestionsMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CategoryQuestionsMutation", m)
-}
-
 // The ExampleFunc type is an adapter to allow the use of ordinary
 // function as Example mutator.
 type ExampleFunc func(context.Context, *ent.ExampleMutation) (ent.Value, error)
@@ -68,28 +56,40 @@ func (f History_AnswerFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Val
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.HistoryAnswerMutation", m)
 }
 
-// The QuestionsFunc type is an adapter to allow the use of ordinary
-// function as Questions mutator.
-type QuestionsFunc func(context.Context, *ent.QuestionsMutation) (ent.Value, error)
+// The QuestionFunc type is an adapter to allow the use of ordinary
+// function as Question mutator.
+type QuestionFunc func(context.Context, *ent.QuestionMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
-func (f QuestionsFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.QuestionsMutation); ok {
+func (f QuestionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.QuestionMutation); ok {
 		return f(ctx, mv)
 	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.QuestionsMutation", m)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.QuestionMutation", m)
 }
 
-// The SessionFunc type is an adapter to allow the use of ordinary
-// function as Session mutator.
-type SessionFunc func(context.Context, *ent.SessionMutation) (ent.Value, error)
+// The Question_CategoryFunc type is an adapter to allow the use of ordinary
+// function as Question_Category mutator.
+type Question_CategoryFunc func(context.Context, *ent.QuestionCategoryMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
-func (f SessionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.SessionMutation); ok {
+func (f Question_CategoryFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.QuestionCategoryMutation); ok {
 		return f(ctx, mv)
 	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SessionMutation", m)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.QuestionCategoryMutation", m)
+}
+
+// The TokenFunc type is an adapter to allow the use of ordinary
+// function as Token mutator.
+type TokenFunc func(context.Context, *ent.TokenMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f TokenFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.TokenMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TokenMutation", m)
 }
 
 // The UserFunc type is an adapter to allow the use of ordinary

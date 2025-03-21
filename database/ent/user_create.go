@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"go-gin/database/ent/activation_token"
 	"go-gin/database/ent/form_response"
-	"go-gin/database/ent/session"
+	"go-gin/database/ent/token"
 	"go-gin/database/ent/user"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -117,23 +117,19 @@ func (uc *UserCreate) SetActivationTokens(a *Activation_token) *UserCreate {
 	return uc.SetActivationTokensID(a.ID)
 }
 
-// SetSessionsID sets the "sessions" edge to the Session entity by ID.
-func (uc *UserCreate) SetSessionsID(id uuid.UUID) *UserCreate {
-	uc.mutation.SetSessionsID(id)
+// AddTokenIDs adds the "tokens" edge to the Token entity by IDs.
+func (uc *UserCreate) AddTokenIDs(ids ...uuid.UUID) *UserCreate {
+	uc.mutation.AddTokenIDs(ids...)
 	return uc
 }
 
-// SetNillableSessionsID sets the "sessions" edge to the Session entity by ID if the given value is not nil.
-func (uc *UserCreate) SetNillableSessionsID(id *uuid.UUID) *UserCreate {
-	if id != nil {
-		uc = uc.SetSessionsID(*id)
+// AddTokens adds the "tokens" edges to the Token entity.
+func (uc *UserCreate) AddTokens(t ...*Token) *UserCreate {
+	ids := make([]uuid.UUID, len(t))
+	for i := range t {
+		ids[i] = t[i].ID
 	}
-	return uc
-}
-
-// SetSessions sets the "sessions" edge to the Session entity.
-func (uc *UserCreate) SetSessions(s *Session) *UserCreate {
-	return uc.SetSessionsID(s.ID)
+	return uc.AddTokenIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -302,15 +298,15 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := uc.mutation.SessionsIDs(); len(nodes) > 0 {
+	if nodes := uc.mutation.TokensIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.SessionsTable,
-			Columns: []string{user.SessionsColumn},
+			Table:   user.TokensTable,
+			Columns: []string{user.TokensColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(token.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

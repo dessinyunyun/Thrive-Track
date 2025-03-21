@@ -4,24 +4,59 @@ import (
 	"context"
 	"fmt"
 	"go-gin/app/question"
+	"go-gin/app/question_categories"
+	"go-gin/app/tools"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 type Usecase struct {
-	repo question.QuestionRepository
-	ctx  context.Context
+	repo   question.QuestionRepository
+	qcRepo question_categories.Repository
+	ctx    context.Context
 }
 
-func NewQuestionUsecase(repo question.QuestionRepository, ctx context.Context) *Usecase {
+func NewQuestionUsecase(repo question.QuestionRepository, qcRepo question_categories.Repository, ctx context.Context) *Usecase {
 	return &Usecase{
-		repo: repo,
-		ctx:  ctx,
+		repo:   repo,
+		ctx:    ctx,
+		qcRepo: qcRepo,
 	}
 }
 
-func (uc *Usecase) GetDetail(c *gin.Context) (*question.Response, error) {
+func (uc *Usecase) GetAll(c *gin.Context) (*question.QuestionResponse, *tools.Pagination, error) {
+	pagination, err := tools.Paginate(c)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var filter question.Filter
+	if err := c.ShouldBindQuery(&filter); err != nil {
+		return nil, nil, err
+	}
+
+	categoryQuestion, err := uc.qcRepo.GetDetail(uc.ctx, filter.Language, filter.QuestionCategoryOrder)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	filter.CategoryId = categoryQuestion.ID
+
+	result, pagination, err := uc.repo.GetAll(uc.ctx, pagination, &filter)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	finalRes := &question.QuestionResponse{
+		Questions:    result,
+		CategoryName: categoryQuestion.CategoryName,
+	}
+
+	return finalRes, pagination, nil
+}
+
+func (uc *Usecase) GetDetail(c *gin.Context) (*question.Question, error) {
 	language := c.Param("language")
 	order := c.Param("order")
 

@@ -18,7 +18,7 @@ var (
 	ErrUsernameExists      = errors.New("Username already exists.")
 	ErrEmailUsernameExists = errors.New("Email and username already exist.")
 	ErrUserNotFound        = errors.New("User not found.")
-	ErrInvalidToken        = errors.New("Invalid token.")
+	ErrInvalidToken        = errors.New("Token invalid/revoked.")
 	ErrATalreadyUsed       = errors.New("The activation token has already been used.")
 	ErrATnotFound          = errors.New("User activation token not found.")
 	ErrAccountNotActivated = errors.New("Account has not been activated. Please check your email for the activation link to complete the process.")

@@ -8,7 +8,8 @@ import (
 	"fmt"
 	"go-gin/database/ent/history_answer"
 	"go-gin/database/ent/predicate"
-	"go-gin/database/ent/questions"
+	"go-gin/database/ent/question"
+	"go-gin/database/ent/question_category"
 	"math"
 
 	"entgo.io/ent"
@@ -17,52 +18,53 @@ import (
 	"entgo.io/ent/schema/field"
 )
 
-// QuestionsQuery is the builder for querying Questions entities.
-type QuestionsQuery struct {
+// QuestionQuery is the builder for querying Question entities.
+type QuestionQuery struct {
 	config
 	ctx                *QueryContext
-	order              []questions.OrderOption
+	order              []question.OrderOption
 	inters             []Interceptor
-	predicates         []predicate.Questions
+	predicates         []predicate.Question
 	withHistoryAnswers *HistoryAnswerQuery
+	withCategory       *QuestionCategoryQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
 }
 
-// Where adds a new predicate for the QuestionsQuery builder.
-func (qq *QuestionsQuery) Where(ps ...predicate.Questions) *QuestionsQuery {
+// Where adds a new predicate for the QuestionQuery builder.
+func (qq *QuestionQuery) Where(ps ...predicate.Question) *QuestionQuery {
 	qq.predicates = append(qq.predicates, ps...)
 	return qq
 }
 
 // Limit the number of records to be returned by this query.
-func (qq *QuestionsQuery) Limit(limit int) *QuestionsQuery {
+func (qq *QuestionQuery) Limit(limit int) *QuestionQuery {
 	qq.ctx.Limit = &limit
 	return qq
 }
 
 // Offset to start from.
-func (qq *QuestionsQuery) Offset(offset int) *QuestionsQuery {
+func (qq *QuestionQuery) Offset(offset int) *QuestionQuery {
 	qq.ctx.Offset = &offset
 	return qq
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
-func (qq *QuestionsQuery) Unique(unique bool) *QuestionsQuery {
+func (qq *QuestionQuery) Unique(unique bool) *QuestionQuery {
 	qq.ctx.Unique = &unique
 	return qq
 }
 
 // Order specifies how the records should be ordered.
-func (qq *QuestionsQuery) Order(o ...questions.OrderOption) *QuestionsQuery {
+func (qq *QuestionQuery) Order(o ...question.OrderOption) *QuestionQuery {
 	qq.order = append(qq.order, o...)
 	return qq
 }
 
 // QueryHistoryAnswers chains the current query on the "history_answers" edge.
-func (qq *QuestionsQuery) QueryHistoryAnswers() *HistoryAnswerQuery {
+func (qq *QuestionQuery) QueryHistoryAnswers() *HistoryAnswerQuery {
 	query := (&HistoryAnswerClient{config: qq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := qq.prepareQuery(ctx); err != nil {
@@ -73,9 +75,9 @@ func (qq *QuestionsQuery) QueryHistoryAnswers() *HistoryAnswerQuery {
 			return nil, err
 		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(questions.Table, questions.FieldID, selector),
+			sqlgraph.From(question.Table, question.FieldID, selector),
 			sqlgraph.To(history_answer.Table, history_answer.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, questions.HistoryAnswersTable, questions.HistoryAnswersColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, question.HistoryAnswersTable, question.HistoryAnswersColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(qq.driver.Dialect(), step)
 		return fromU, nil
@@ -83,21 +85,43 @@ func (qq *QuestionsQuery) QueryHistoryAnswers() *HistoryAnswerQuery {
 	return query
 }
 
-// First returns the first Questions entity from the query.
-// Returns a *NotFoundError when no Questions was found.
-func (qq *QuestionsQuery) First(ctx context.Context) (*Questions, error) {
+// QueryCategory chains the current query on the "category" edge.
+func (qq *QuestionQuery) QueryCategory() *QuestionCategoryQuery {
+	query := (&QuestionCategoryClient{config: qq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := qq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := qq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(question.Table, question.FieldID, selector),
+			sqlgraph.To(question_category.Table, question_category.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, question.CategoryTable, question.CategoryColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(qq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// First returns the first Question entity from the query.
+// Returns a *NotFoundError when no Question was found.
+func (qq *QuestionQuery) First(ctx context.Context) (*Question, error) {
 	nodes, err := qq.Limit(1).All(setContextOp(ctx, qq.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
 	if len(nodes) == 0 {
-		return nil, &NotFoundError{questions.Label}
+		return nil, &NotFoundError{question.Label}
 	}
 	return nodes[0], nil
 }
 
 // FirstX is like First, but panics if an error occurs.
-func (qq *QuestionsQuery) FirstX(ctx context.Context) *Questions {
+func (qq *QuestionQuery) FirstX(ctx context.Context) *Question {
 	node, err := qq.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -105,22 +129,22 @@ func (qq *QuestionsQuery) FirstX(ctx context.Context) *Questions {
 	return node
 }
 
-// FirstID returns the first Questions ID from the query.
-// Returns a *NotFoundError when no Questions ID was found.
-func (qq *QuestionsQuery) FirstID(ctx context.Context) (id int, err error) {
+// FirstID returns the first Question ID from the query.
+// Returns a *NotFoundError when no Question ID was found.
+func (qq *QuestionQuery) FirstID(ctx context.Context) (id int, err error) {
 	var ids []int
 	if ids, err = qq.Limit(1).IDs(setContextOp(ctx, qq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
-		err = &NotFoundError{questions.Label}
+		err = &NotFoundError{question.Label}
 		return
 	}
 	return ids[0], nil
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (qq *QuestionsQuery) FirstIDX(ctx context.Context) int {
+func (qq *QuestionQuery) FirstIDX(ctx context.Context) int {
 	id, err := qq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -128,10 +152,10 @@ func (qq *QuestionsQuery) FirstIDX(ctx context.Context) int {
 	return id
 }
 
-// Only returns a single Questions entity found by the query, ensuring it only returns one.
-// Returns a *NotSingularError when more than one Questions entity is found.
-// Returns a *NotFoundError when no Questions entities are found.
-func (qq *QuestionsQuery) Only(ctx context.Context) (*Questions, error) {
+// Only returns a single Question entity found by the query, ensuring it only returns one.
+// Returns a *NotSingularError when more than one Question entity is found.
+// Returns a *NotFoundError when no Question entities are found.
+func (qq *QuestionQuery) Only(ctx context.Context) (*Question, error) {
 	nodes, err := qq.Limit(2).All(setContextOp(ctx, qq.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
@@ -140,14 +164,14 @@ func (qq *QuestionsQuery) Only(ctx context.Context) (*Questions, error) {
 	case 1:
 		return nodes[0], nil
 	case 0:
-		return nil, &NotFoundError{questions.Label}
+		return nil, &NotFoundError{question.Label}
 	default:
-		return nil, &NotSingularError{questions.Label}
+		return nil, &NotSingularError{question.Label}
 	}
 }
 
 // OnlyX is like Only, but panics if an error occurs.
-func (qq *QuestionsQuery) OnlyX(ctx context.Context) *Questions {
+func (qq *QuestionQuery) OnlyX(ctx context.Context) *Question {
 	node, err := qq.Only(ctx)
 	if err != nil {
 		panic(err)
@@ -155,10 +179,10 @@ func (qq *QuestionsQuery) OnlyX(ctx context.Context) *Questions {
 	return node
 }
 
-// OnlyID is like Only, but returns the only Questions ID in the query.
-// Returns a *NotSingularError when more than one Questions ID is found.
+// OnlyID is like Only, but returns the only Question ID in the query.
+// Returns a *NotSingularError when more than one Question ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (qq *QuestionsQuery) OnlyID(ctx context.Context) (id int, err error) {
+func (qq *QuestionQuery) OnlyID(ctx context.Context) (id int, err error) {
 	var ids []int
 	if ids, err = qq.Limit(2).IDs(setContextOp(ctx, qq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
@@ -167,15 +191,15 @@ func (qq *QuestionsQuery) OnlyID(ctx context.Context) (id int, err error) {
 	case 1:
 		id = ids[0]
 	case 0:
-		err = &NotFoundError{questions.Label}
+		err = &NotFoundError{question.Label}
 	default:
-		err = &NotSingularError{questions.Label}
+		err = &NotSingularError{question.Label}
 	}
 	return
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (qq *QuestionsQuery) OnlyIDX(ctx context.Context) int {
+func (qq *QuestionQuery) OnlyIDX(ctx context.Context) int {
 	id, err := qq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -183,18 +207,18 @@ func (qq *QuestionsQuery) OnlyIDX(ctx context.Context) int {
 	return id
 }
 
-// All executes the query and returns a list of QuestionsSlice.
-func (qq *QuestionsQuery) All(ctx context.Context) ([]*Questions, error) {
+// All executes the query and returns a list of Questions.
+func (qq *QuestionQuery) All(ctx context.Context) ([]*Question, error) {
 	ctx = setContextOp(ctx, qq.ctx, ent.OpQueryAll)
 	if err := qq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	qr := querierAll[[]*Questions, *QuestionsQuery]()
-	return withInterceptors[[]*Questions](ctx, qq, qr, qq.inters)
+	qr := querierAll[[]*Question, *QuestionQuery]()
+	return withInterceptors[[]*Question](ctx, qq, qr, qq.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
-func (qq *QuestionsQuery) AllX(ctx context.Context) []*Questions {
+func (qq *QuestionQuery) AllX(ctx context.Context) []*Question {
 	nodes, err := qq.All(ctx)
 	if err != nil {
 		panic(err)
@@ -202,20 +226,20 @@ func (qq *QuestionsQuery) AllX(ctx context.Context) []*Questions {
 	return nodes
 }
 
-// IDs executes the query and returns a list of Questions IDs.
-func (qq *QuestionsQuery) IDs(ctx context.Context) (ids []int, err error) {
+// IDs executes the query and returns a list of Question IDs.
+func (qq *QuestionQuery) IDs(ctx context.Context) (ids []int, err error) {
 	if qq.ctx.Unique == nil && qq.path != nil {
 		qq.Unique(true)
 	}
 	ctx = setContextOp(ctx, qq.ctx, ent.OpQueryIDs)
-	if err = qq.Select(questions.FieldID).Scan(ctx, &ids); err != nil {
+	if err = qq.Select(question.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (qq *QuestionsQuery) IDsX(ctx context.Context) []int {
+func (qq *QuestionQuery) IDsX(ctx context.Context) []int {
 	ids, err := qq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -224,16 +248,16 @@ func (qq *QuestionsQuery) IDsX(ctx context.Context) []int {
 }
 
 // Count returns the count of the given query.
-func (qq *QuestionsQuery) Count(ctx context.Context) (int, error) {
+func (qq *QuestionQuery) Count(ctx context.Context) (int, error) {
 	ctx = setContextOp(ctx, qq.ctx, ent.OpQueryCount)
 	if err := qq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return withInterceptors[int](ctx, qq, querierCount[*QuestionsQuery](), qq.inters)
+	return withInterceptors[int](ctx, qq, querierCount[*QuestionQuery](), qq.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
-func (qq *QuestionsQuery) CountX(ctx context.Context) int {
+func (qq *QuestionQuery) CountX(ctx context.Context) int {
 	count, err := qq.Count(ctx)
 	if err != nil {
 		panic(err)
@@ -242,7 +266,7 @@ func (qq *QuestionsQuery) CountX(ctx context.Context) int {
 }
 
 // Exist returns true if the query has elements in the graph.
-func (qq *QuestionsQuery) Exist(ctx context.Context) (bool, error) {
+func (qq *QuestionQuery) Exist(ctx context.Context) (bool, error) {
 	ctx = setContextOp(ctx, qq.ctx, ent.OpQueryExist)
 	switch _, err := qq.FirstID(ctx); {
 	case IsNotFound(err):
@@ -255,7 +279,7 @@ func (qq *QuestionsQuery) Exist(ctx context.Context) (bool, error) {
 }
 
 // ExistX is like Exist, but panics if an error occurs.
-func (qq *QuestionsQuery) ExistX(ctx context.Context) bool {
+func (qq *QuestionQuery) ExistX(ctx context.Context) bool {
 	exist, err := qq.Exist(ctx)
 	if err != nil {
 		panic(err)
@@ -263,19 +287,20 @@ func (qq *QuestionsQuery) ExistX(ctx context.Context) bool {
 	return exist
 }
 
-// Clone returns a duplicate of the QuestionsQuery builder, including all associated steps. It can be
+// Clone returns a duplicate of the QuestionQuery builder, including all associated steps. It can be
 // used to prepare common query builders and use them differently after the clone is made.
-func (qq *QuestionsQuery) Clone() *QuestionsQuery {
+func (qq *QuestionQuery) Clone() *QuestionQuery {
 	if qq == nil {
 		return nil
 	}
-	return &QuestionsQuery{
+	return &QuestionQuery{
 		config:             qq.config,
 		ctx:                qq.ctx.Clone(),
-		order:              append([]questions.OrderOption{}, qq.order...),
+		order:              append([]question.OrderOption{}, qq.order...),
 		inters:             append([]Interceptor{}, qq.inters...),
-		predicates:         append([]predicate.Questions{}, qq.predicates...),
+		predicates:         append([]predicate.Question{}, qq.predicates...),
 		withHistoryAnswers: qq.withHistoryAnswers.Clone(),
+		withCategory:       qq.withCategory.Clone(),
 		// clone intermediate query.
 		sql:  qq.sql.Clone(),
 		path: qq.path,
@@ -284,12 +309,23 @@ func (qq *QuestionsQuery) Clone() *QuestionsQuery {
 
 // WithHistoryAnswers tells the query-builder to eager-load the nodes that are connected to
 // the "history_answers" edge. The optional arguments are used to configure the query builder of the edge.
-func (qq *QuestionsQuery) WithHistoryAnswers(opts ...func(*HistoryAnswerQuery)) *QuestionsQuery {
+func (qq *QuestionQuery) WithHistoryAnswers(opts ...func(*HistoryAnswerQuery)) *QuestionQuery {
 	query := (&HistoryAnswerClient{config: qq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
 	qq.withHistoryAnswers = query
+	return qq
+}
+
+// WithCategory tells the query-builder to eager-load the nodes that are connected to
+// the "category" edge. The optional arguments are used to configure the query builder of the edge.
+func (qq *QuestionQuery) WithCategory(opts ...func(*QuestionCategoryQuery)) *QuestionQuery {
+	query := (&QuestionCategoryClient{config: qq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	qq.withCategory = query
 	return qq
 }
 
@@ -303,15 +339,15 @@ func (qq *QuestionsQuery) WithHistoryAnswers(opts ...func(*HistoryAnswerQuery)) 
 //		Count int `json:"count,omitempty"`
 //	}
 //
-//	client.Questions.Query().
-//		GroupBy(questions.FieldCreatedAt).
+//	client.Question.Query().
+//		GroupBy(question.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-func (qq *QuestionsQuery) GroupBy(field string, fields ...string) *QuestionsGroupBy {
+func (qq *QuestionQuery) GroupBy(field string, fields ...string) *QuestionGroupBy {
 	qq.ctx.Fields = append([]string{field}, fields...)
-	grbuild := &QuestionsGroupBy{build: qq}
+	grbuild := &QuestionGroupBy{build: qq}
 	grbuild.flds = &qq.ctx.Fields
-	grbuild.label = questions.Label
+	grbuild.label = question.Label
 	grbuild.scan = grbuild.Scan
 	return grbuild
 }
@@ -325,23 +361,23 @@ func (qq *QuestionsQuery) GroupBy(field string, fields ...string) *QuestionsGrou
 //		CreatedAt time.Time `json:"created_at,omitempty"`
 //	}
 //
-//	client.Questions.Query().
-//		Select(questions.FieldCreatedAt).
+//	client.Question.Query().
+//		Select(question.FieldCreatedAt).
 //		Scan(ctx, &v)
-func (qq *QuestionsQuery) Select(fields ...string) *QuestionsSelect {
+func (qq *QuestionQuery) Select(fields ...string) *QuestionSelect {
 	qq.ctx.Fields = append(qq.ctx.Fields, fields...)
-	sbuild := &QuestionsSelect{QuestionsQuery: qq}
-	sbuild.label = questions.Label
+	sbuild := &QuestionSelect{QuestionQuery: qq}
+	sbuild.label = question.Label
 	sbuild.flds, sbuild.scan = &qq.ctx.Fields, sbuild.Scan
 	return sbuild
 }
 
-// Aggregate returns a QuestionsSelect configured with the given aggregations.
-func (qq *QuestionsQuery) Aggregate(fns ...AggregateFunc) *QuestionsSelect {
+// Aggregate returns a QuestionSelect configured with the given aggregations.
+func (qq *QuestionQuery) Aggregate(fns ...AggregateFunc) *QuestionSelect {
 	return qq.Select().Aggregate(fns...)
 }
 
-func (qq *QuestionsQuery) prepareQuery(ctx context.Context) error {
+func (qq *QuestionQuery) prepareQuery(ctx context.Context) error {
 	for _, inter := range qq.inters {
 		if inter == nil {
 			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
@@ -353,7 +389,7 @@ func (qq *QuestionsQuery) prepareQuery(ctx context.Context) error {
 		}
 	}
 	for _, f := range qq.ctx.Fields {
-		if !questions.ValidColumn(f) {
+		if !question.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
 	}
@@ -367,19 +403,20 @@ func (qq *QuestionsQuery) prepareQuery(ctx context.Context) error {
 	return nil
 }
 
-func (qq *QuestionsQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Questions, error) {
+func (qq *QuestionQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Question, error) {
 	var (
-		nodes       = []*Questions{}
+		nodes       = []*Question{}
 		_spec       = qq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			qq.withHistoryAnswers != nil,
+			qq.withCategory != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
-		return (*Questions).scanValues(nil, columns)
+		return (*Question).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
-		node := &Questions{config: qq.config}
+		node := &Question{config: qq.config}
 		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
@@ -395,17 +432,23 @@ func (qq *QuestionsQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Qu
 	}
 	if query := qq.withHistoryAnswers; query != nil {
 		if err := qq.loadHistoryAnswers(ctx, query, nodes,
-			func(n *Questions) { n.Edges.HistoryAnswers = []*History_Answer{} },
-			func(n *Questions, e *History_Answer) { n.Edges.HistoryAnswers = append(n.Edges.HistoryAnswers, e) }); err != nil {
+			func(n *Question) { n.Edges.HistoryAnswers = []*History_Answer{} },
+			func(n *Question, e *History_Answer) { n.Edges.HistoryAnswers = append(n.Edges.HistoryAnswers, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := qq.withCategory; query != nil {
+		if err := qq.loadCategory(ctx, query, nodes, nil,
+			func(n *Question, e *Question_Category) { n.Edges.Category = e }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (qq *QuestionsQuery) loadHistoryAnswers(ctx context.Context, query *HistoryAnswerQuery, nodes []*Questions, init func(*Questions), assign func(*Questions, *History_Answer)) error {
+func (qq *QuestionQuery) loadHistoryAnswers(ctx context.Context, query *HistoryAnswerQuery, nodes []*Question, init func(*Question), assign func(*Question, *History_Answer)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[int]*Questions)
+	nodeids := make(map[int]*Question)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
@@ -417,7 +460,7 @@ func (qq *QuestionsQuery) loadHistoryAnswers(ctx context.Context, query *History
 		query.ctx.AppendFieldOnce(history_answer.FieldQuestionID)
 	}
 	query.Where(predicate.History_Answer(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(questions.HistoryAnswersColumn), fks...))
+		s.Where(sql.InValues(s.C(question.HistoryAnswersColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
@@ -433,8 +476,37 @@ func (qq *QuestionsQuery) loadHistoryAnswers(ctx context.Context, query *History
 	}
 	return nil
 }
+func (qq *QuestionQuery) loadCategory(ctx context.Context, query *QuestionCategoryQuery, nodes []*Question, init func(*Question), assign func(*Question, *Question_Category)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*Question)
+	for i := range nodes {
+		fk := nodes[i].CategoryID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(question_category.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "category_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 
-func (qq *QuestionsQuery) sqlCount(ctx context.Context) (int, error) {
+func (qq *QuestionQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := qq.querySpec()
 	_spec.Node.Columns = qq.ctx.Fields
 	if len(qq.ctx.Fields) > 0 {
@@ -443,8 +515,8 @@ func (qq *QuestionsQuery) sqlCount(ctx context.Context) (int, error) {
 	return sqlgraph.CountNodes(ctx, qq.driver, _spec)
 }
 
-func (qq *QuestionsQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(questions.Table, questions.Columns, sqlgraph.NewFieldSpec(questions.FieldID, field.TypeInt))
+func (qq *QuestionQuery) querySpec() *sqlgraph.QuerySpec {
+	_spec := sqlgraph.NewQuerySpec(question.Table, question.Columns, sqlgraph.NewFieldSpec(question.FieldID, field.TypeInt))
 	_spec.From = qq.sql
 	if unique := qq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
@@ -453,11 +525,14 @@ func (qq *QuestionsQuery) querySpec() *sqlgraph.QuerySpec {
 	}
 	if fields := qq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
-		_spec.Node.Columns = append(_spec.Node.Columns, questions.FieldID)
+		_spec.Node.Columns = append(_spec.Node.Columns, question.FieldID)
 		for i := range fields {
-			if fields[i] != questions.FieldID {
+			if fields[i] != question.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if qq.withCategory != nil {
+			_spec.Node.AddColumnOnce(question.FieldCategoryID)
 		}
 	}
 	if ps := qq.predicates; len(ps) > 0 {
@@ -483,12 +558,12 @@ func (qq *QuestionsQuery) querySpec() *sqlgraph.QuerySpec {
 	return _spec
 }
 
-func (qq *QuestionsQuery) sqlQuery(ctx context.Context) *sql.Selector {
+func (qq *QuestionQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(qq.driver.Dialect())
-	t1 := builder.Table(questions.Table)
+	t1 := builder.Table(question.Table)
 	columns := qq.ctx.Fields
 	if len(columns) == 0 {
-		columns = questions.Columns
+		columns = question.Columns
 	}
 	selector := builder.Select(t1.Columns(columns...)...).From(t1)
 	if qq.sql != nil {
@@ -515,28 +590,28 @@ func (qq *QuestionsQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	return selector
 }
 
-// QuestionsGroupBy is the group-by builder for Questions entities.
-type QuestionsGroupBy struct {
+// QuestionGroupBy is the group-by builder for Question entities.
+type QuestionGroupBy struct {
 	selector
-	build *QuestionsQuery
+	build *QuestionQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
-func (qgb *QuestionsGroupBy) Aggregate(fns ...AggregateFunc) *QuestionsGroupBy {
+func (qgb *QuestionGroupBy) Aggregate(fns ...AggregateFunc) *QuestionGroupBy {
 	qgb.fns = append(qgb.fns, fns...)
 	return qgb
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (qgb *QuestionsGroupBy) Scan(ctx context.Context, v any) error {
+func (qgb *QuestionGroupBy) Scan(ctx context.Context, v any) error {
 	ctx = setContextOp(ctx, qgb.build.ctx, ent.OpQueryGroupBy)
 	if err := qgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*QuestionsQuery, *QuestionsGroupBy](ctx, qgb.build, qgb, qgb.build.inters, v)
+	return scanWithInterceptors[*QuestionQuery, *QuestionGroupBy](ctx, qgb.build, qgb, qgb.build.inters, v)
 }
 
-func (qgb *QuestionsGroupBy) sqlScan(ctx context.Context, root *QuestionsQuery, v any) error {
+func (qgb *QuestionGroupBy) sqlScan(ctx context.Context, root *QuestionQuery, v any) error {
 	selector := root.sqlQuery(ctx).Select()
 	aggregation := make([]string, 0, len(qgb.fns))
 	for _, fn := range qgb.fns {
@@ -563,28 +638,28 @@ func (qgb *QuestionsGroupBy) sqlScan(ctx context.Context, root *QuestionsQuery, 
 	return sql.ScanSlice(rows, v)
 }
 
-// QuestionsSelect is the builder for selecting fields of Questions entities.
-type QuestionsSelect struct {
-	*QuestionsQuery
+// QuestionSelect is the builder for selecting fields of Question entities.
+type QuestionSelect struct {
+	*QuestionQuery
 	selector
 }
 
 // Aggregate adds the given aggregation functions to the selector query.
-func (qs *QuestionsSelect) Aggregate(fns ...AggregateFunc) *QuestionsSelect {
+func (qs *QuestionSelect) Aggregate(fns ...AggregateFunc) *QuestionSelect {
 	qs.fns = append(qs.fns, fns...)
 	return qs
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (qs *QuestionsSelect) Scan(ctx context.Context, v any) error {
+func (qs *QuestionSelect) Scan(ctx context.Context, v any) error {
 	ctx = setContextOp(ctx, qs.ctx, ent.OpQuerySelect)
 	if err := qs.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*QuestionsQuery, *QuestionsSelect](ctx, qs.QuestionsQuery, qs, qs.inters, v)
+	return scanWithInterceptors[*QuestionQuery, *QuestionSelect](ctx, qs.QuestionQuery, qs, qs.inters, v)
 }
 
-func (qs *QuestionsSelect) sqlScan(ctx context.Context, root *QuestionsQuery, v any) error {
+func (qs *QuestionSelect) sqlScan(ctx context.Context, root *QuestionQuery, v any) error {
 	selector := root.sqlQuery(ctx)
 	aggregation := make([]string, 0, len(qs.fns))
 	for _, fn := range qs.fns {

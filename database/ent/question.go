@@ -4,7 +4,8 @@ package ent
 
 import (
 	"fmt"
-	"go-gin/database/ent/questions"
+	"go-gin/database/ent/question"
+	"go-gin/database/ent/question_category"
 	"strings"
 	"time"
 
@@ -12,8 +13,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
-// Questions is the model entity for the Questions schema.
-type Questions struct {
+// Question is the model entity for the Question schema.
+type Question struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
@@ -29,42 +30,59 @@ type Questions struct {
 	Language string `json:"language,omitempty"`
 	// Description holds the value of the "description" field.
 	Description string `json:"description,omitempty"`
+	// Example holds the value of the "example" field.
+	Example string `json:"example,omitempty"`
 	// Order holds the value of the "order" field.
 	Order int `json:"order,omitempty"`
+	// CategoryID holds the value of the "category_id" field.
+	CategoryID int `json:"category_id,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
-	// The values are being populated by the QuestionsQuery when eager-loading is set.
-	Edges        QuestionsEdges `json:"edges"`
+	// The values are being populated by the QuestionQuery when eager-loading is set.
+	Edges        QuestionEdges `json:"edges"`
 	selectValues sql.SelectValues
 }
 
-// QuestionsEdges holds the relations/edges for other nodes in the graph.
-type QuestionsEdges struct {
+// QuestionEdges holds the relations/edges for other nodes in the graph.
+type QuestionEdges struct {
 	// HistoryAnswers holds the value of the history_answers edge.
 	HistoryAnswers []*History_Answer `json:"history_answers,omitempty"`
+	// Category holds the value of the category edge.
+	Category *Question_Category `json:"category,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // HistoryAnswersOrErr returns the HistoryAnswers value or an error if the edge
 // was not loaded in eager-loading.
-func (e QuestionsEdges) HistoryAnswersOrErr() ([]*History_Answer, error) {
+func (e QuestionEdges) HistoryAnswersOrErr() ([]*History_Answer, error) {
 	if e.loadedTypes[0] {
 		return e.HistoryAnswers, nil
 	}
 	return nil, &NotLoadedError{edge: "history_answers"}
 }
 
+// CategoryOrErr returns the Category value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e QuestionEdges) CategoryOrErr() (*Question_Category, error) {
+	if e.Category != nil {
+		return e.Category, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: question_category.Label}
+	}
+	return nil, &NotLoadedError{edge: "category"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
-func (*Questions) scanValues(columns []string) ([]any, error) {
+func (*Question) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case questions.FieldID, questions.FieldOrder:
+		case question.FieldID, question.FieldOrder, question.FieldCategoryID:
 			values[i] = new(sql.NullInt64)
-		case questions.FieldText, questions.FieldLanguage, questions.FieldDescription:
+		case question.FieldText, question.FieldLanguage, question.FieldDescription, question.FieldExample:
 			values[i] = new(sql.NullString)
-		case questions.FieldCreatedAt, questions.FieldUpdatedAt, questions.FieldDeletedAt:
+		case question.FieldCreatedAt, question.FieldUpdatedAt, question.FieldDeletedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -74,61 +92,73 @@ func (*Questions) scanValues(columns []string) ([]any, error) {
 }
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
-// to the Questions fields.
-func (q *Questions) assignValues(columns []string, values []any) error {
+// to the Question fields.
+func (q *Question) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
 	for i := range columns {
 		switch columns[i] {
-		case questions.FieldID:
+		case question.FieldID:
 			value, ok := values[i].(*sql.NullInt64)
 			if !ok {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			q.ID = int(value.Int64)
-		case questions.FieldCreatedAt:
+		case question.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
 				q.CreatedAt = value.Time
 			}
-		case questions.FieldUpdatedAt:
+		case question.FieldUpdatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
 				q.UpdatedAt = value.Time
 			}
-		case questions.FieldDeletedAt:
+		case question.FieldDeletedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field deleted_at", values[i])
 			} else if value.Valid {
 				q.DeletedAt = new(time.Time)
 				*q.DeletedAt = value.Time
 			}
-		case questions.FieldText:
+		case question.FieldText:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field text", values[i])
 			} else if value.Valid {
 				q.Text = value.String
 			}
-		case questions.FieldLanguage:
+		case question.FieldLanguage:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field language", values[i])
 			} else if value.Valid {
 				q.Language = value.String
 			}
-		case questions.FieldDescription:
+		case question.FieldDescription:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field description", values[i])
 			} else if value.Valid {
 				q.Description = value.String
 			}
-		case questions.FieldOrder:
+		case question.FieldExample:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field example", values[i])
+			} else if value.Valid {
+				q.Example = value.String
+			}
+		case question.FieldOrder:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field order", values[i])
 			} else if value.Valid {
 				q.Order = int(value.Int64)
+			}
+		case question.FieldCategoryID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field category_id", values[i])
+			} else if value.Valid {
+				q.CategoryID = int(value.Int64)
 			}
 		default:
 			q.selectValues.Set(columns[i], values[i])
@@ -137,39 +167,44 @@ func (q *Questions) assignValues(columns []string, values []any) error {
 	return nil
 }
 
-// Value returns the ent.Value that was dynamically selected and assigned to the Questions.
+// Value returns the ent.Value that was dynamically selected and assigned to the Question.
 // This includes values selected through modifiers, order, etc.
-func (q *Questions) Value(name string) (ent.Value, error) {
+func (q *Question) Value(name string) (ent.Value, error) {
 	return q.selectValues.Get(name)
 }
 
-// QueryHistoryAnswers queries the "history_answers" edge of the Questions entity.
-func (q *Questions) QueryHistoryAnswers() *HistoryAnswerQuery {
-	return NewQuestionsClient(q.config).QueryHistoryAnswers(q)
+// QueryHistoryAnswers queries the "history_answers" edge of the Question entity.
+func (q *Question) QueryHistoryAnswers() *HistoryAnswerQuery {
+	return NewQuestionClient(q.config).QueryHistoryAnswers(q)
 }
 
-// Update returns a builder for updating this Questions.
-// Note that you need to call Questions.Unwrap() before calling this method if this Questions
+// QueryCategory queries the "category" edge of the Question entity.
+func (q *Question) QueryCategory() *QuestionCategoryQuery {
+	return NewQuestionClient(q.config).QueryCategory(q)
+}
+
+// Update returns a builder for updating this Question.
+// Note that you need to call Question.Unwrap() before calling this method if this Question
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (q *Questions) Update() *QuestionsUpdateOne {
-	return NewQuestionsClient(q.config).UpdateOne(q)
+func (q *Question) Update() *QuestionUpdateOne {
+	return NewQuestionClient(q.config).UpdateOne(q)
 }
 
-// Unwrap unwraps the Questions entity that was returned from a transaction after it was closed,
+// Unwrap unwraps the Question entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (q *Questions) Unwrap() *Questions {
+func (q *Question) Unwrap() *Question {
 	_tx, ok := q.config.driver.(*txDriver)
 	if !ok {
-		panic("ent: Questions is not a transactional entity")
+		panic("ent: Question is not a transactional entity")
 	}
 	q.config.driver = _tx.drv
 	return q
 }
 
 // String implements the fmt.Stringer.
-func (q *Questions) String() string {
+func (q *Question) String() string {
 	var builder strings.Builder
-	builder.WriteString("Questions(")
+	builder.WriteString("Question(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", q.ID))
 	builder.WriteString("created_at=")
 	builder.WriteString(q.CreatedAt.Format(time.ANSIC))
@@ -191,11 +226,17 @@ func (q *Questions) String() string {
 	builder.WriteString("description=")
 	builder.WriteString(q.Description)
 	builder.WriteString(", ")
+	builder.WriteString("example=")
+	builder.WriteString(q.Example)
+	builder.WriteString(", ")
 	builder.WriteString("order=")
 	builder.WriteString(fmt.Sprintf("%v", q.Order))
+	builder.WriteString(", ")
+	builder.WriteString("category_id=")
+	builder.WriteString(fmt.Sprintf("%v", q.CategoryID))
 	builder.WriteByte(')')
 	return builder.String()
 }
 
-// QuestionsSlice is a parsable slice of Questions.
-type QuestionsSlice []*Questions
+// Questions is a parsable slice of Question.
+type Questions []*Question

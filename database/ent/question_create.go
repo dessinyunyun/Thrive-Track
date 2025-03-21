@@ -7,28 +7,29 @@ import (
 	"errors"
 	"fmt"
 	"go-gin/database/ent/history_answer"
-	"go-gin/database/ent/questions"
+	"go-gin/database/ent/question"
+	"go-gin/database/ent/question_category"
 	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 )
 
-// QuestionsCreate is the builder for creating a Questions entity.
-type QuestionsCreate struct {
+// QuestionCreate is the builder for creating a Question entity.
+type QuestionCreate struct {
 	config
-	mutation *QuestionsMutation
+	mutation *QuestionMutation
 	hooks    []Hook
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (qc *QuestionsCreate) SetCreatedAt(t time.Time) *QuestionsCreate {
+func (qc *QuestionCreate) SetCreatedAt(t time.Time) *QuestionCreate {
 	qc.mutation.SetCreatedAt(t)
 	return qc
 }
 
 // SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (qc *QuestionsCreate) SetNillableCreatedAt(t *time.Time) *QuestionsCreate {
+func (qc *QuestionCreate) SetNillableCreatedAt(t *time.Time) *QuestionCreate {
 	if t != nil {
 		qc.SetCreatedAt(*t)
 	}
@@ -36,13 +37,13 @@ func (qc *QuestionsCreate) SetNillableCreatedAt(t *time.Time) *QuestionsCreate {
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (qc *QuestionsCreate) SetUpdatedAt(t time.Time) *QuestionsCreate {
+func (qc *QuestionCreate) SetUpdatedAt(t time.Time) *QuestionCreate {
 	qc.mutation.SetUpdatedAt(t)
 	return qc
 }
 
 // SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
-func (qc *QuestionsCreate) SetNillableUpdatedAt(t *time.Time) *QuestionsCreate {
+func (qc *QuestionCreate) SetNillableUpdatedAt(t *time.Time) *QuestionCreate {
 	if t != nil {
 		qc.SetUpdatedAt(*t)
 	}
@@ -50,13 +51,13 @@ func (qc *QuestionsCreate) SetNillableUpdatedAt(t *time.Time) *QuestionsCreate {
 }
 
 // SetDeletedAt sets the "deleted_at" field.
-func (qc *QuestionsCreate) SetDeletedAt(t time.Time) *QuestionsCreate {
+func (qc *QuestionCreate) SetDeletedAt(t time.Time) *QuestionCreate {
 	qc.mutation.SetDeletedAt(t)
 	return qc
 }
 
 // SetNillableDeletedAt sets the "deleted_at" field if the given value is not nil.
-func (qc *QuestionsCreate) SetNillableDeletedAt(t *time.Time) *QuestionsCreate {
+func (qc *QuestionCreate) SetNillableDeletedAt(t *time.Time) *QuestionCreate {
 	if t != nil {
 		qc.SetDeletedAt(*t)
 	}
@@ -64,37 +65,49 @@ func (qc *QuestionsCreate) SetNillableDeletedAt(t *time.Time) *QuestionsCreate {
 }
 
 // SetText sets the "text" field.
-func (qc *QuestionsCreate) SetText(s string) *QuestionsCreate {
+func (qc *QuestionCreate) SetText(s string) *QuestionCreate {
 	qc.mutation.SetText(s)
 	return qc
 }
 
 // SetLanguage sets the "language" field.
-func (qc *QuestionsCreate) SetLanguage(s string) *QuestionsCreate {
+func (qc *QuestionCreate) SetLanguage(s string) *QuestionCreate {
 	qc.mutation.SetLanguage(s)
 	return qc
 }
 
 // SetDescription sets the "description" field.
-func (qc *QuestionsCreate) SetDescription(s string) *QuestionsCreate {
+func (qc *QuestionCreate) SetDescription(s string) *QuestionCreate {
 	qc.mutation.SetDescription(s)
 	return qc
 }
 
+// SetExample sets the "example" field.
+func (qc *QuestionCreate) SetExample(s string) *QuestionCreate {
+	qc.mutation.SetExample(s)
+	return qc
+}
+
 // SetOrder sets the "order" field.
-func (qc *QuestionsCreate) SetOrder(i int) *QuestionsCreate {
+func (qc *QuestionCreate) SetOrder(i int) *QuestionCreate {
 	qc.mutation.SetOrder(i)
 	return qc
 }
 
+// SetCategoryID sets the "category_id" field.
+func (qc *QuestionCreate) SetCategoryID(i int) *QuestionCreate {
+	qc.mutation.SetCategoryID(i)
+	return qc
+}
+
 // AddHistoryAnswerIDs adds the "history_answers" edge to the History_Answer entity by IDs.
-func (qc *QuestionsCreate) AddHistoryAnswerIDs(ids ...int) *QuestionsCreate {
+func (qc *QuestionCreate) AddHistoryAnswerIDs(ids ...int) *QuestionCreate {
 	qc.mutation.AddHistoryAnswerIDs(ids...)
 	return qc
 }
 
 // AddHistoryAnswers adds the "history_answers" edges to the History_Answer entity.
-func (qc *QuestionsCreate) AddHistoryAnswers(h ...*History_Answer) *QuestionsCreate {
+func (qc *QuestionCreate) AddHistoryAnswers(h ...*History_Answer) *QuestionCreate {
 	ids := make([]int, len(h))
 	for i := range h {
 		ids[i] = h[i].ID
@@ -102,19 +115,24 @@ func (qc *QuestionsCreate) AddHistoryAnswers(h ...*History_Answer) *QuestionsCre
 	return qc.AddHistoryAnswerIDs(ids...)
 }
 
-// Mutation returns the QuestionsMutation object of the builder.
-func (qc *QuestionsCreate) Mutation() *QuestionsMutation {
+// SetCategory sets the "category" edge to the Question_Category entity.
+func (qc *QuestionCreate) SetCategory(q *Question_Category) *QuestionCreate {
+	return qc.SetCategoryID(q.ID)
+}
+
+// Mutation returns the QuestionMutation object of the builder.
+func (qc *QuestionCreate) Mutation() *QuestionMutation {
 	return qc.mutation
 }
 
-// Save creates the Questions in the database.
-func (qc *QuestionsCreate) Save(ctx context.Context) (*Questions, error) {
+// Save creates the Question in the database.
+func (qc *QuestionCreate) Save(ctx context.Context) (*Question, error) {
 	qc.defaults()
 	return withHooks(ctx, qc.sqlSave, qc.mutation, qc.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (qc *QuestionsCreate) SaveX(ctx context.Context) *Questions {
+func (qc *QuestionCreate) SaveX(ctx context.Context) *Question {
 	v, err := qc.Save(ctx)
 	if err != nil {
 		panic(err)
@@ -123,64 +141,73 @@ func (qc *QuestionsCreate) SaveX(ctx context.Context) *Questions {
 }
 
 // Exec executes the query.
-func (qc *QuestionsCreate) Exec(ctx context.Context) error {
+func (qc *QuestionCreate) Exec(ctx context.Context) error {
 	_, err := qc.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (qc *QuestionsCreate) ExecX(ctx context.Context) {
+func (qc *QuestionCreate) ExecX(ctx context.Context) {
 	if err := qc.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (qc *QuestionsCreate) defaults() {
+func (qc *QuestionCreate) defaults() {
 	if _, ok := qc.mutation.CreatedAt(); !ok {
-		v := questions.DefaultCreatedAt()
+		v := question.DefaultCreatedAt()
 		qc.mutation.SetCreatedAt(v)
 	}
 	if _, ok := qc.mutation.UpdatedAt(); !ok {
-		v := questions.DefaultUpdatedAt()
+		v := question.DefaultUpdatedAt()
 		qc.mutation.SetUpdatedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (qc *QuestionsCreate) check() error {
+func (qc *QuestionCreate) check() error {
 	if _, ok := qc.mutation.CreatedAt(); !ok {
-		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Questions.created_at"`)}
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Question.created_at"`)}
 	}
 	if _, ok := qc.mutation.UpdatedAt(); !ok {
-		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Questions.updated_at"`)}
+		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Question.updated_at"`)}
 	}
 	if _, ok := qc.mutation.Text(); !ok {
-		return &ValidationError{Name: "text", err: errors.New(`ent: missing required field "Questions.text"`)}
+		return &ValidationError{Name: "text", err: errors.New(`ent: missing required field "Question.text"`)}
 	}
 	if v, ok := qc.mutation.Text(); ok {
-		if err := questions.TextValidator(v); err != nil {
-			return &ValidationError{Name: "text", err: fmt.Errorf(`ent: validator failed for field "Questions.text": %w`, err)}
+		if err := question.TextValidator(v); err != nil {
+			return &ValidationError{Name: "text", err: fmt.Errorf(`ent: validator failed for field "Question.text": %w`, err)}
 		}
 	}
 	if _, ok := qc.mutation.Language(); !ok {
-		return &ValidationError{Name: "language", err: errors.New(`ent: missing required field "Questions.language"`)}
+		return &ValidationError{Name: "language", err: errors.New(`ent: missing required field "Question.language"`)}
 	}
 	if v, ok := qc.mutation.Language(); ok {
-		if err := questions.LanguageValidator(v); err != nil {
-			return &ValidationError{Name: "language", err: fmt.Errorf(`ent: validator failed for field "Questions.language": %w`, err)}
+		if err := question.LanguageValidator(v); err != nil {
+			return &ValidationError{Name: "language", err: fmt.Errorf(`ent: validator failed for field "Question.language": %w`, err)}
 		}
 	}
 	if _, ok := qc.mutation.Description(); !ok {
-		return &ValidationError{Name: "description", err: errors.New(`ent: missing required field "Questions.description"`)}
+		return &ValidationError{Name: "description", err: errors.New(`ent: missing required field "Question.description"`)}
+	}
+	if _, ok := qc.mutation.Example(); !ok {
+		return &ValidationError{Name: "example", err: errors.New(`ent: missing required field "Question.example"`)}
 	}
 	if _, ok := qc.mutation.Order(); !ok {
-		return &ValidationError{Name: "order", err: errors.New(`ent: missing required field "Questions.order"`)}
+		return &ValidationError{Name: "order", err: errors.New(`ent: missing required field "Question.order"`)}
+	}
+	if _, ok := qc.mutation.CategoryID(); !ok {
+		return &ValidationError{Name: "category_id", err: errors.New(`ent: missing required field "Question.category_id"`)}
+	}
+	if len(qc.mutation.CategoryIDs()) == 0 {
+		return &ValidationError{Name: "category", err: errors.New(`ent: missing required edge "Question.category"`)}
 	}
 	return nil
 }
 
-func (qc *QuestionsCreate) sqlSave(ctx context.Context) (*Questions, error) {
+func (qc *QuestionCreate) sqlSave(ctx context.Context) (*Question, error) {
 	if err := qc.check(); err != nil {
 		return nil, err
 	}
@@ -198,45 +225,49 @@ func (qc *QuestionsCreate) sqlSave(ctx context.Context) (*Questions, error) {
 	return _node, nil
 }
 
-func (qc *QuestionsCreate) createSpec() (*Questions, *sqlgraph.CreateSpec) {
+func (qc *QuestionCreate) createSpec() (*Question, *sqlgraph.CreateSpec) {
 	var (
-		_node = &Questions{config: qc.config}
-		_spec = sqlgraph.NewCreateSpec(questions.Table, sqlgraph.NewFieldSpec(questions.FieldID, field.TypeInt))
+		_node = &Question{config: qc.config}
+		_spec = sqlgraph.NewCreateSpec(question.Table, sqlgraph.NewFieldSpec(question.FieldID, field.TypeInt))
 	)
 	if value, ok := qc.mutation.CreatedAt(); ok {
-		_spec.SetField(questions.FieldCreatedAt, field.TypeTime, value)
+		_spec.SetField(question.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
 	if value, ok := qc.mutation.UpdatedAt(); ok {
-		_spec.SetField(questions.FieldUpdatedAt, field.TypeTime, value)
+		_spec.SetField(question.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
 	if value, ok := qc.mutation.DeletedAt(); ok {
-		_spec.SetField(questions.FieldDeletedAt, field.TypeTime, value)
+		_spec.SetField(question.FieldDeletedAt, field.TypeTime, value)
 		_node.DeletedAt = &value
 	}
 	if value, ok := qc.mutation.Text(); ok {
-		_spec.SetField(questions.FieldText, field.TypeString, value)
+		_spec.SetField(question.FieldText, field.TypeString, value)
 		_node.Text = value
 	}
 	if value, ok := qc.mutation.Language(); ok {
-		_spec.SetField(questions.FieldLanguage, field.TypeString, value)
+		_spec.SetField(question.FieldLanguage, field.TypeString, value)
 		_node.Language = value
 	}
 	if value, ok := qc.mutation.Description(); ok {
-		_spec.SetField(questions.FieldDescription, field.TypeString, value)
+		_spec.SetField(question.FieldDescription, field.TypeString, value)
 		_node.Description = value
 	}
+	if value, ok := qc.mutation.Example(); ok {
+		_spec.SetField(question.FieldExample, field.TypeString, value)
+		_node.Example = value
+	}
 	if value, ok := qc.mutation.Order(); ok {
-		_spec.SetField(questions.FieldOrder, field.TypeInt, value)
+		_spec.SetField(question.FieldOrder, field.TypeInt, value)
 		_node.Order = value
 	}
 	if nodes := qc.mutation.HistoryAnswersIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   questions.HistoryAnswersTable,
-			Columns: []string{questions.HistoryAnswersColumn},
+			Table:   question.HistoryAnswersTable,
+			Columns: []string{question.HistoryAnswersColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(history_answer.FieldID, field.TypeInt),
@@ -247,30 +278,47 @@ func (qc *QuestionsCreate) createSpec() (*Questions, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
+	if nodes := qc.mutation.CategoryIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   question.CategoryTable,
+			Columns: []string{question.CategoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(question_category.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.CategoryID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	return _node, _spec
 }
 
-// QuestionsCreateBulk is the builder for creating many Questions entities in bulk.
-type QuestionsCreateBulk struct {
+// QuestionCreateBulk is the builder for creating many Question entities in bulk.
+type QuestionCreateBulk struct {
 	config
 	err      error
-	builders []*QuestionsCreate
+	builders []*QuestionCreate
 }
 
-// Save creates the Questions entities in the database.
-func (qcb *QuestionsCreateBulk) Save(ctx context.Context) ([]*Questions, error) {
+// Save creates the Question entities in the database.
+func (qcb *QuestionCreateBulk) Save(ctx context.Context) ([]*Question, error) {
 	if qcb.err != nil {
 		return nil, qcb.err
 	}
 	specs := make([]*sqlgraph.CreateSpec, len(qcb.builders))
-	nodes := make([]*Questions, len(qcb.builders))
+	nodes := make([]*Question, len(qcb.builders))
 	mutators := make([]Mutator, len(qcb.builders))
 	for i := range qcb.builders {
 		func(i int, root context.Context) {
 			builder := qcb.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-				mutation, ok := m.(*QuestionsMutation)
+				mutation, ok := m.(*QuestionMutation)
 				if !ok {
 					return nil, fmt.Errorf("unexpected mutation type %T", m)
 				}
@@ -317,7 +365,7 @@ func (qcb *QuestionsCreateBulk) Save(ctx context.Context) ([]*Questions, error) 
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (qcb *QuestionsCreateBulk) SaveX(ctx context.Context) []*Questions {
+func (qcb *QuestionCreateBulk) SaveX(ctx context.Context) []*Question {
 	v, err := qcb.Save(ctx)
 	if err != nil {
 		panic(err)
@@ -326,13 +374,13 @@ func (qcb *QuestionsCreateBulk) SaveX(ctx context.Context) []*Questions {
 }
 
 // Exec executes the query.
-func (qcb *QuestionsCreateBulk) Exec(ctx context.Context) error {
+func (qcb *QuestionCreateBulk) Exec(ctx context.Context) error {
 	_, err := qcb.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (qcb *QuestionsCreateBulk) ExecX(ctx context.Context) {
+func (qcb *QuestionCreateBulk) ExecX(ctx context.Context) {
 	if err := qcb.Exec(ctx); err != nil {
 		panic(err)
 	}

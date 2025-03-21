@@ -116,7 +116,7 @@ func TestActivatedClient(t *testing.T) {
 
 	h := ReturnAuthHandler(ht.Ctx, ht.DB, ht.Log)
 	v1 := ht.Route.Group("api/v1")
-	v1.POST("/auth/activated-client", h.ActivatedClient)
+	v1.POST("/auth/activated-client", h.ActivatedAccount)
 
 	url := "/api/v1" + "/auth" + "/activated-client"
 
@@ -126,10 +126,6 @@ func TestActivatedClient(t *testing.T) {
 				entUser.UsernameEqualFold("example"),
 			),
 		)
-
-	if count, _ := userQuery.Count(ht.Ctx); count == 0 {
-		panic("not found user username")
-	}
 
 	exec, _ := userQuery.First(ht.Ctx)
 
@@ -183,18 +179,7 @@ func TestActivatedClient(t *testing.T) {
 			assert.Equal(t, tt.expectedMessage, response.Message, "message: Expected and Result does not match")
 
 			if !tt.wantErr {
-				// dataBytes, err := json.Marshal(response.Data)
-				// if err != nil {
-				// 	t.Fatalf("gagal marshal response.Data: %v", err)
-				// }
-				// var data auth.ActivatedTokenForm
-				// err = json.Unmarshal(dataBytes, &data)
-				// if err != nil {
-				// 	t.Logf("gagal unmarshal data: %v", err)
-				// }
-				// if data.Token == "" || data.RefreshToken == "" {
-				// 	t.Error("not return token and refresh token")
-				// }
+
 			}
 
 		})
@@ -290,9 +275,89 @@ func TestLogin(t *testing.T) {
 					t.Logf("gagal unmarshal data: %v", err)
 				}
 				t.Log("data", data)
-				if data.AccessToken.Token == "" || data.AccessToken.RefreshToken == "" {
+				if data.Token.AccessToken == "" || data.Token.RefreshToken == "" {
 					t.Error("not return token and refresh token")
 				}
+			}
+
+		})
+	}
+
+}
+
+func TestRefreshToken(t *testing.T) {
+	// go test -v ./app/auth/handler/ -run TestRefreshToken
+	ht := test.SetUpRouter()
+
+	h := ReturnAuthHandler(ht.Ctx, ht.DB, ht.Log)
+	v1 := ht.Route.Group("api/v1")
+	v1.POST("/auth/refresh-token", h.RefreshToken)
+
+	url := "/api/v1" + "/auth" + "/refresh-token"
+
+	userQuery := ht.DB.User.Query().
+		Where(
+			entUser.Or(
+				entUser.UsernameEqualFold("example"),
+			),
+		)
+
+	exec, err := userQuery.First(ht.Ctx)
+	if err != nil {
+		fmt.Println("not found user", err)
+	}
+
+	AT, err := h.uc.GetDetailToken(exec.ID)
+	if err != nil {
+		fmt.Println("not found user token", err)
+	}
+
+	validData := auth.RefreshTokenForm{
+		RefreshToken: AT.RefreshToken,
+	}
+
+	tests := []struct {
+		name            string
+		request         *auth.RefreshTokenForm
+		expectedMessage interface{}
+		expectedCode    int
+		wantErr         bool
+	}{
+		{"success get refresh token", &validData, "success refresh token", 200, true},
+		{"refresh token revoked", &validData, auth.ErrInvalidToken.Error(), 401, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			tx, err := ht.DB.Tx(ctx) // Mulai transaksi
+			if err != nil {
+				t.Fatalf("gagal memulai transaksi: %v", err)
+			}
+			defer tx.Rollback() // Pastikan rollback selalu dijalankan
+
+			// Kirim transaksi ke handler melalui context
+			ctx = context.WithValue(ctx, "tx", tx)
+			reqBody, _ := json.Marshal(tt.request)
+			req, _ := http.NewRequest(http.MethodPost, url, bytes.NewReader(reqBody))
+			req = req.WithContext(ctx) // Set context ke request
+
+			w := httptest.NewRecorder()
+			ht.Route.ServeHTTP(w, req)
+
+			var response tools.Response
+			err = json.Unmarshal(w.Body.Bytes(), &response)
+			if err != nil {
+				t.Logf("gagal unmarshal respons: %v", err)
+			}
+
+			// t.Log("result body", w.Body.String())
+			// t.Log("result code", w.Code)
+			assert.Equal(t, tt.expectedCode, w.Code, "Code: Expected and Result does not match")
+			assert.Equal(t, tt.expectedMessage, response.Message, "message: Expected and Result does not match")
+
+			if !tt.wantErr {
+
 			}
 
 		})

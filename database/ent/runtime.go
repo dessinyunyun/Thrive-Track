@@ -7,9 +7,10 @@ import (
 	"go-gin/database/ent/example"
 	"go-gin/database/ent/form_response"
 	"go-gin/database/ent/history_answer"
-	"go-gin/database/ent/questions"
+	"go-gin/database/ent/question"
+	"go-gin/database/ent/question_category"
 	"go-gin/database/ent/schema"
-	"go-gin/database/ent/session"
+	"go-gin/database/ent/token"
 	"go-gin/database/ent/user"
 	"time"
 
@@ -172,66 +173,81 @@ func init() {
 	history_answerDescAnswer := history_answerFields[2].Descriptor()
 	// history_answer.AnswerValidator is a validator for the "answer" field. It is called by the builders before save.
 	history_answer.AnswerValidator = history_answerDescAnswer.Validators[0].(func(int) error)
-	questionsMixin := schema.Questions{}.Mixin()
-	questionsMixinFields0 := questionsMixin[0].Fields()
-	_ = questionsMixinFields0
-	questionsFields := schema.Questions{}.Fields()
-	_ = questionsFields
-	// questionsDescCreatedAt is the schema descriptor for created_at field.
-	questionsDescCreatedAt := questionsMixinFields0[0].Descriptor()
-	// questions.DefaultCreatedAt holds the default value on creation for the created_at field.
-	questions.DefaultCreatedAt = questionsDescCreatedAt.Default.(func() time.Time)
-	// questionsDescUpdatedAt is the schema descriptor for updated_at field.
-	questionsDescUpdatedAt := questionsMixinFields0[1].Descriptor()
-	// questions.DefaultUpdatedAt holds the default value on creation for the updated_at field.
-	questions.DefaultUpdatedAt = questionsDescUpdatedAt.Default.(func() time.Time)
-	// questions.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
-	questions.UpdateDefaultUpdatedAt = questionsDescUpdatedAt.UpdateDefault.(func() time.Time)
-	// questionsDescText is the schema descriptor for text field.
-	questionsDescText := questionsFields[0].Descriptor()
-	// questions.TextValidator is a validator for the "text" field. It is called by the builders before save.
-	questions.TextValidator = questionsDescText.Validators[0].(func(string) error)
-	// questionsDescLanguage is the schema descriptor for language field.
-	questionsDescLanguage := questionsFields[1].Descriptor()
-	// questions.LanguageValidator is a validator for the "language" field. It is called by the builders before save.
-	questions.LanguageValidator = questionsDescLanguage.Validators[0].(func(string) error)
-	sessionMixin := schema.Session{}.Mixin()
-	sessionMixinFields0 := sessionMixin[0].Fields()
-	_ = sessionMixinFields0
-	sessionFields := schema.Session{}.Fields()
-	_ = sessionFields
-	// sessionDescCreatedAt is the schema descriptor for created_at field.
-	sessionDescCreatedAt := sessionMixinFields0[0].Descriptor()
-	// session.DefaultCreatedAt holds the default value on creation for the created_at field.
-	session.DefaultCreatedAt = sessionDescCreatedAt.Default.(func() time.Time)
-	// sessionDescUpdatedAt is the schema descriptor for updated_at field.
-	sessionDescUpdatedAt := sessionMixinFields0[1].Descriptor()
-	// session.DefaultUpdatedAt holds the default value on creation for the updated_at field.
-	session.DefaultUpdatedAt = sessionDescUpdatedAt.Default.(func() time.Time)
-	// session.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
-	session.UpdateDefaultUpdatedAt = sessionDescUpdatedAt.UpdateDefault.(func() time.Time)
-	// sessionDescToken is the schema descriptor for token field.
-	sessionDescToken := sessionFields[2].Descriptor()
-	// session.TokenValidator is a validator for the "token" field. It is called by the builders before save.
-	session.TokenValidator = func() func(string) error {
-		validators := sessionDescToken.Validators
+	questionMixin := schema.Question{}.Mixin()
+	questionMixinFields0 := questionMixin[0].Fields()
+	_ = questionMixinFields0
+	questionFields := schema.Question{}.Fields()
+	_ = questionFields
+	// questionDescCreatedAt is the schema descriptor for created_at field.
+	questionDescCreatedAt := questionMixinFields0[0].Descriptor()
+	// question.DefaultCreatedAt holds the default value on creation for the created_at field.
+	question.DefaultCreatedAt = questionDescCreatedAt.Default.(func() time.Time)
+	// questionDescUpdatedAt is the schema descriptor for updated_at field.
+	questionDescUpdatedAt := questionMixinFields0[1].Descriptor()
+	// question.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	question.DefaultUpdatedAt = questionDescUpdatedAt.Default.(func() time.Time)
+	// question.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	question.UpdateDefaultUpdatedAt = questionDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// questionDescText is the schema descriptor for text field.
+	questionDescText := questionFields[0].Descriptor()
+	// question.TextValidator is a validator for the "text" field. It is called by the builders before save.
+	question.TextValidator = questionDescText.Validators[0].(func(string) error)
+	// questionDescLanguage is the schema descriptor for language field.
+	questionDescLanguage := questionFields[1].Descriptor()
+	// question.LanguageValidator is a validator for the "language" field. It is called by the builders before save.
+	question.LanguageValidator = questionDescLanguage.Validators[0].(func(string) error)
+	question_categoryFields := schema.Question_Category{}.Fields()
+	_ = question_categoryFields
+	// question_categoryDescName is the schema descriptor for name field.
+	question_categoryDescName := question_categoryFields[0].Descriptor()
+	// question_category.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	question_category.NameValidator = question_categoryDescName.Validators[0].(func(string) error)
+	// question_categoryDescLanguage is the schema descriptor for language field.
+	question_categoryDescLanguage := question_categoryFields[2].Descriptor()
+	// question_category.LanguageValidator is a validator for the "language" field. It is called by the builders before save.
+	question_category.LanguageValidator = question_categoryDescLanguage.Validators[0].(func(string) error)
+	tokenFields := schema.Token{}.Fields()
+	_ = tokenFields
+	// tokenDescAccessToken is the schema descriptor for access_token field.
+	tokenDescAccessToken := tokenFields[2].Descriptor()
+	// token.AccessTokenValidator is a validator for the "access_token" field. It is called by the builders before save.
+	token.AccessTokenValidator = func() func(string) error {
+		validators := tokenDescAccessToken.Validators
 		fns := [...]func(string) error{
 			validators[0].(func(string) error),
 			validators[1].(func(string) error),
 		}
-		return func(token string) error {
+		return func(access_token string) error {
 			for _, fn := range fns {
-				if err := fn(token); err != nil {
+				if err := fn(access_token); err != nil {
 					return err
 				}
 			}
 			return nil
 		}
 	}()
-	// sessionDescID is the schema descriptor for id field.
-	sessionDescID := sessionFields[0].Descriptor()
-	// session.DefaultID holds the default value on creation for the id field.
-	session.DefaultID = sessionDescID.Default.(func() uuid.UUID)
+	// tokenDescRefreshToken is the schema descriptor for refresh_token field.
+	tokenDescRefreshToken := tokenFields[3].Descriptor()
+	// token.RefreshTokenValidator is a validator for the "refresh_token" field. It is called by the builders before save.
+	token.RefreshTokenValidator = func() func(string) error {
+		validators := tokenDescRefreshToken.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(refresh_token string) error {
+			for _, fn := range fns {
+				if err := fn(refresh_token); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// tokenDescID is the schema descriptor for id field.
+	tokenDescID := tokenFields[0].Descriptor()
+	// token.DefaultID holds the default value on creation for the id field.
+	token.DefaultID = tokenDescID.Default.(func() uuid.UUID)
 	userFields := schema.User{}.Fields()
 	_ = userFields
 	// userDescName is the schema descriptor for name field.

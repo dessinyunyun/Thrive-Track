@@ -5,7 +5,6 @@ package ent
 import (
 	"fmt"
 	"go-gin/database/ent/activation_token"
-	"go-gin/database/ent/session"
 	"go-gin/database/ent/user"
 	"strings"
 
@@ -41,8 +40,8 @@ type UserEdges struct {
 	FormResponses []*Form_Response `json:"form_responses,omitempty"`
 	// ActivationTokens holds the value of the activation_tokens edge.
 	ActivationTokens *Activation_token `json:"activation_tokens,omitempty"`
-	// Sessions holds the value of the sessions edge.
-	Sessions *Session `json:"sessions,omitempty"`
+	// Tokens holds the value of the tokens edge.
+	Tokens []*Token `json:"tokens,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [3]bool
@@ -68,15 +67,13 @@ func (e UserEdges) ActivationTokensOrErr() (*Activation_token, error) {
 	return nil, &NotLoadedError{edge: "activation_tokens"}
 }
 
-// SessionsOrErr returns the Sessions value or an error if the edge
-// was not loaded in eager-loading, or loaded but was not found.
-func (e UserEdges) SessionsOrErr() (*Session, error) {
-	if e.Sessions != nil {
-		return e.Sessions, nil
-	} else if e.loadedTypes[2] {
-		return nil, &NotFoundError{label: session.Label}
+// TokensOrErr returns the Tokens value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) TokensOrErr() ([]*Token, error) {
+	if e.loadedTypes[2] {
+		return e.Tokens, nil
 	}
-	return nil, &NotLoadedError{edge: "sessions"}
+	return nil, &NotLoadedError{edge: "tokens"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -165,9 +162,9 @@ func (u *User) QueryActivationTokens() *ActivationTokenQuery {
 	return NewUserClient(u.config).QueryActivationTokens(u)
 }
 
-// QuerySessions queries the "sessions" edge of the User entity.
-func (u *User) QuerySessions() *SessionQuery {
-	return NewUserClient(u.config).QuerySessions(u)
+// QueryTokens queries the "tokens" edge of the User entity.
+func (u *User) QueryTokens() *TokenQuery {
+	return NewUserClient(u.config).QueryTokens(u)
 }
 
 // Update returns a builder for updating this User.

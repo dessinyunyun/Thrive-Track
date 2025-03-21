@@ -9,7 +9,7 @@ import (
 	"go-gin/database/ent/activation_token"
 	"go-gin/database/ent/form_response"
 	"go-gin/database/ent/predicate"
-	"go-gin/database/ent/session"
+	"go-gin/database/ent/token"
 	"go-gin/database/ent/user"
 	"math"
 
@@ -29,7 +29,7 @@ type UserQuery struct {
 	predicates           []predicate.User
 	withFormResponses    *FormResponseQuery
 	withActivationTokens *ActivationTokenQuery
-	withSessions         *SessionQuery
+	withTokens           *TokenQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -110,9 +110,9 @@ func (uq *UserQuery) QueryActivationTokens() *ActivationTokenQuery {
 	return query
 }
 
-// QuerySessions chains the current query on the "sessions" edge.
-func (uq *UserQuery) QuerySessions() *SessionQuery {
-	query := (&SessionClient{config: uq.config}).Query()
+// QueryTokens chains the current query on the "tokens" edge.
+func (uq *UserQuery) QueryTokens() *TokenQuery {
+	query := (&TokenClient{config: uq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := uq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -123,8 +123,8 @@ func (uq *UserQuery) QuerySessions() *SessionQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(user.Table, user.FieldID, selector),
-			sqlgraph.To(session.Table, session.FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, false, user.SessionsTable, user.SessionsColumn),
+			sqlgraph.To(token.Table, token.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.TokensTable, user.TokensColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
 		return fromU, nil
@@ -326,7 +326,7 @@ func (uq *UserQuery) Clone() *UserQuery {
 		predicates:           append([]predicate.User{}, uq.predicates...),
 		withFormResponses:    uq.withFormResponses.Clone(),
 		withActivationTokens: uq.withActivationTokens.Clone(),
-		withSessions:         uq.withSessions.Clone(),
+		withTokens:           uq.withTokens.Clone(),
 		// clone intermediate query.
 		sql:  uq.sql.Clone(),
 		path: uq.path,
@@ -355,14 +355,14 @@ func (uq *UserQuery) WithActivationTokens(opts ...func(*ActivationTokenQuery)) *
 	return uq
 }
 
-// WithSessions tells the query-builder to eager-load the nodes that are connected to
-// the "sessions" edge. The optional arguments are used to configure the query builder of the edge.
-func (uq *UserQuery) WithSessions(opts ...func(*SessionQuery)) *UserQuery {
-	query := (&SessionClient{config: uq.config}).Query()
+// WithTokens tells the query-builder to eager-load the nodes that are connected to
+// the "tokens" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithTokens(opts ...func(*TokenQuery)) *UserQuery {
+	query := (&TokenClient{config: uq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	uq.withSessions = query
+	uq.withTokens = query
 	return uq
 }
 
@@ -447,7 +447,7 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		loadedTypes = [3]bool{
 			uq.withFormResponses != nil,
 			uq.withActivationTokens != nil,
-			uq.withSessions != nil,
+			uq.withTokens != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -481,9 +481,10 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 			return nil, err
 		}
 	}
-	if query := uq.withSessions; query != nil {
-		if err := uq.loadSessions(ctx, query, nodes, nil,
-			func(n *User, e *Session) { n.Edges.Sessions = e }); err != nil {
+	if query := uq.withTokens; query != nil {
+		if err := uq.loadTokens(ctx, query, nodes,
+			func(n *User) { n.Edges.Tokens = []*Token{} },
+			func(n *User, e *Token) { n.Edges.Tokens = append(n.Edges.Tokens, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -547,18 +548,21 @@ func (uq *UserQuery) loadActivationTokens(ctx context.Context, query *Activation
 	}
 	return nil
 }
-func (uq *UserQuery) loadSessions(ctx context.Context, query *SessionQuery, nodes []*User, init func(*User), assign func(*User, *Session)) error {
+func (uq *UserQuery) loadTokens(ctx context.Context, query *TokenQuery, nodes []*User, init func(*User), assign func(*User, *Token)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*User)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
 	}
 	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(session.FieldUserID)
+		query.ctx.AppendFieldOnce(token.FieldUserID)
 	}
-	query.Where(predicate.Session(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(user.SessionsColumn), fks...))
+	query.Where(predicate.Token(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(user.TokensColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

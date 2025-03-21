@@ -330,7 +330,7 @@ func HasQuestion() predicate.History_Answer {
 }
 
 // HasQuestionWith applies the HasEdge predicate on the "question" edge with a given conditions (other predicates).
-func HasQuestionWith(preds ...predicate.Questions) predicate.History_Answer {
+func HasQuestionWith(preds ...predicate.Question) predicate.History_Answer {
 	return predicate.History_Answer(func(s *sql.Selector) {
 		step := newQuestionStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {

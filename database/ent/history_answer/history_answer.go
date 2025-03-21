@@ -41,8 +41,8 @@ const (
 	FormResponseColumn = "form_response_id"
 	// QuestionTable is the table that holds the question relation/edge.
 	QuestionTable = "history_answers"
-	// QuestionInverseTable is the table name for the Questions entity.
-	// It exists in this package in order to avoid circular dependency with the "questions" package.
+	// QuestionInverseTable is the table name for the Question entity.
+	// It exists in this package in order to avoid circular dependency with the "question" package.
 	QuestionInverseTable = "questions"
 	// QuestionColumn is the table column denoting the question relation/edge.
 	QuestionColumn = "question_id"

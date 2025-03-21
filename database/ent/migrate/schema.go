@@ -14,7 +14,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "deleted_at", Type: field.TypeTime, Nullable: true},
-		{Name: "token", Type: field.TypeString, Unique: true, Size: 255},
+		{Name: "token", Type: field.TypeString, Unique: true, Size: 520},
 		{Name: "isused", Type: field.TypeBool, Default: false},
 		{Name: "user_id", Type: field.TypeUUID, Unique: true},
 	}
@@ -31,16 +31,6 @@ var (
 				OnDelete:   schema.NoAction,
 			},
 		},
-	}
-	// CategoryQuestionsColumns holds the columns for the "category_questions" table.
-	CategoryQuestionsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
-	}
-	// CategoryQuestionsTable holds the schema information for the "category_questions" table.
-	CategoryQuestionsTable = &schema.Table{
-		Name:       "category_questions",
-		Columns:    CategoryQuestionsColumns,
-		PrimaryKey: []*schema.Column{CategoryQuestionsColumns[0]},
 	}
 	// ExamplesColumns holds the columns for the "examples" table.
 	ExamplesColumns = []*schema.Column{
@@ -121,32 +111,56 @@ var (
 		{Name: "text", Type: field.TypeString},
 		{Name: "language", Type: field.TypeString},
 		{Name: "description", Type: field.TypeString},
+		{Name: "example", Type: field.TypeString},
 		{Name: "order", Type: field.TypeInt},
+		{Name: "category_id", Type: field.TypeInt},
 	}
 	// QuestionsTable holds the schema information for the "questions" table.
 	QuestionsTable = &schema.Table{
 		Name:       "questions",
 		Columns:    QuestionsColumns,
 		PrimaryKey: []*schema.Column{QuestionsColumns[0]},
-	}
-	// SessionsColumns holds the columns for the "sessions" table.
-	SessionsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "deleted_at", Type: field.TypeTime, Nullable: true},
-		{Name: "token", Type: field.TypeString, Unique: true, Size: 255},
-		{Name: "user_id", Type: field.TypeUUID, Unique: true},
-	}
-	// SessionsTable holds the schema information for the "sessions" table.
-	SessionsTable = &schema.Table{
-		Name:       "sessions",
-		Columns:    SessionsColumns,
-		PrimaryKey: []*schema.Column{SessionsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "sessions_users_sessions",
-				Columns:    []*schema.Column{SessionsColumns[5]},
+				Symbol:     "questions_question_categories_questions",
+				Columns:    []*schema.Column{QuestionsColumns[9]},
+				RefColumns: []*schema.Column{QuestionCategoriesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
+	// QuestionCategoriesColumns holds the columns for the "question_categories" table.
+	QuestionCategoriesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "name", Type: field.TypeString},
+		{Name: "order", Type: field.TypeInt},
+		{Name: "language", Type: field.TypeString},
+	}
+	// QuestionCategoriesTable holds the schema information for the "question_categories" table.
+	QuestionCategoriesTable = &schema.Table{
+		Name:       "question_categories",
+		Columns:    QuestionCategoriesColumns,
+		PrimaryKey: []*schema.Column{QuestionCategoriesColumns[0]},
+	}
+	// TokensColumns holds the columns for the "tokens" table.
+	TokensColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "access_token", Type: field.TypeString, Size: 520},
+		{Name: "refresh_token", Type: field.TypeString, Size: 520},
+		{Name: "access_token_expires_at", Type: field.TypeTime},
+		{Name: "refresh_token_expires_at", Type: field.TypeTime},
+		{Name: "revoked", Type: field.TypeBool},
+		{Name: "user_id", Type: field.TypeUUID},
+	}
+	// TokensTable holds the schema information for the "tokens" table.
+	TokensTable = &schema.Table{
+		Name:       "tokens",
+		Columns:    TokensColumns,
+		PrimaryKey: []*schema.Column{TokensColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "tokens_users_tokens",
+				Columns:    []*schema.Column{TokensColumns[6]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -170,12 +184,12 @@ var (
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		ActivationTokensTable,
-		CategoryQuestionsTable,
 		ExamplesTable,
 		FormResponsesTable,
 		HistoryAnswersTable,
 		QuestionsTable,
-		SessionsTable,
+		QuestionCategoriesTable,
+		TokensTable,
 		UsersTable,
 	}
 )
@@ -185,5 +199,6 @@ func init() {
 	FormResponsesTable.ForeignKeys[0].RefTable = UsersTable
 	HistoryAnswersTable.ForeignKeys[0].RefTable = FormResponsesTable
 	HistoryAnswersTable.ForeignKeys[1].RefTable = QuestionsTable
-	SessionsTable.ForeignKeys[0].RefTable = UsersTable
+	QuestionsTable.ForeignKeys[0].RefTable = QuestionCategoriesTable
+	TokensTable.ForeignKeys[0].RefTable = UsersTable
 }

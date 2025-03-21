@@ -26,13 +26,13 @@ func (History_Answer) Edges() []ent.Edge {
 		edge.From("form_response", Form_Response.Type).
 			Ref("history_answers").
 			Field("form_response_id").
-			Unique().   // Gunakan form_response_id sebagai foreign key
-			Required(), // Satu History_Answer hanya ke satu Form_Response
-		edge.From("question", Questions.Type).
+			Unique().   // Satu History_Answer hanya terkait dengan satu Form_Response
+			Required(), // Form_Response wajib ada
+		edge.From("question", Question.Type).
 			Ref("history_answers").
 			Field("question_id").
-			Unique().
-			Required(),
+			Unique().   // Satu History_Answer hanya terkait dengan satu Questions
+			Required(), // Questions wajib ada
 	}
 }
 

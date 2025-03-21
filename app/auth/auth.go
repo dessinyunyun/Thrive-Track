@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"go-gin/database/ent"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gofrs/uuid"
@@ -32,13 +33,15 @@ type LoginResponseUser struct {
 }
 
 type Authenticate struct {
-	User        *ent.User `json:"user"`
-	AccessToken JWT       `json:"access_token"`
+	User  *ent.User `json:"user"`
+	Token Token     `json:"token"`
 }
 
-type JWT struct {
-	Token        string `json:"token"`
-	RefreshToken string `json:"refresh_token"`
+type Token struct {
+	AccessToken         string    `json:"access_token"`
+	RefreshToken        string    `json:"refresh_token"`
+	AccessTokenExpired  time.Time `json:"-"`
+	RefreshTokenExpired time.Time `json:"-"`
 }
 
 type RefreshTokenForm struct {
@@ -67,10 +70,15 @@ type AuthUsecase interface {
 	RefreshToken(c *gin.Context) (*Authenticate, error)
 	ActivateUser(c *gin.Context) error
 	GetDetailAT(userID googleUUID.UUID) (*ent.Activation_token, error)
+	GetDetailToken(userID googleUUID.UUID) (*ent.Token, error)
 }
 
 type AuthRepository interface {
 	CreateAT(ctx context.Context, token, userID string) error
 	UsedAT(ctx context.Context, userID googleUUID.UUID) error
 	GetDetailAT(ctx context.Context, userID googleUUID.UUID) (*ent.Activation_token, error)
+
+	CreateToken(ctx context.Context, userID googleUUID.UUID, token Token) error
+	GetDetailToken(ctx context.Context, userID googleUUID.UUID) (*ent.Token, error)
+	RevokedRefreshToken(ctx context.Context, userID googleUUID.UUID) error
 }

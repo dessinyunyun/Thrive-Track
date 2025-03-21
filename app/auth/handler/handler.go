@@ -23,9 +23,9 @@ func AuthRoute(uc auth.AuthUsecase, r *gin.RouterGroup, log *logrus.Entry) {
 	v1 := r.Group("auth")
 
 	v1.POST("/register", h.Register)
+	v1.PATCH("/activated-account", h.ActivatedAccount)
 	v1.POST("/login", h.Login)
 	v1.PATCH("/refresh-token", h.RefreshToken)
-	v1.PATCH("/activated-client", h.ActivatedClient)
 }
 
 // @Tags Auth
@@ -97,7 +97,7 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param request body auth.ActivatedTokenForm true "Payload Body for Patch [RAW]"
-func (h *AuthHandler) ActivatedClient(c *gin.Context) {
+func (h *AuthHandler) ActivatedAccount(c *gin.Context) {
 	err := h.uc.ActivateUser(c)
 	if err != nil {
 		auth.ErrorHandler(c, h.log, err)

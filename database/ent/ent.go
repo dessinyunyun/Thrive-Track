@@ -7,12 +7,12 @@ import (
 	"errors"
 	"fmt"
 	"go-gin/database/ent/activation_token"
-	"go-gin/database/ent/category_questions"
 	"go-gin/database/ent/example"
 	"go-gin/database/ent/form_response"
 	"go-gin/database/ent/history_answer"
-	"go-gin/database/ent/questions"
-	"go-gin/database/ent/session"
+	"go-gin/database/ent/question"
+	"go-gin/database/ent/question_category"
+	"go-gin/database/ent/token"
 	"go-gin/database/ent/user"
 	"reflect"
 	"sync"
@@ -80,14 +80,14 @@ var (
 func checkColumn(table, column string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			activation_token.Table:   activation_token.ValidColumn,
-			category_questions.Table: category_questions.ValidColumn,
-			example.Table:            example.ValidColumn,
-			form_response.Table:      form_response.ValidColumn,
-			history_answer.Table:     history_answer.ValidColumn,
-			questions.Table:          questions.ValidColumn,
-			session.Table:            session.ValidColumn,
-			user.Table:               user.ValidColumn,
+			activation_token.Table:  activation_token.ValidColumn,
+			example.Table:           example.ValidColumn,
+			form_response.Table:     form_response.ValidColumn,
+			history_answer.Table:    history_answer.ValidColumn,
+			question.Table:          question.ValidColumn,
+			question_category.Table: question_category.ValidColumn,
+			token.Table:             token.ValidColumn,
+			user.Table:              user.ValidColumn,
 		})
 	})
 	return columnCheck(table, column)

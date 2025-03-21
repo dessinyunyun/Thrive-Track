@@ -34,7 +34,7 @@ func (User) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("form_responses", Form_Response.Type),
 		edge.To("activation_tokens", Activation_token.Type).Unique(),
-		edge.To("sessions", Session.Type).Unique(),
+		edge.To("tokens", Token.Type),
 	}
 }
 

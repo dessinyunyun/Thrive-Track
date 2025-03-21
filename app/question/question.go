@@ -2,16 +2,24 @@ package question
 
 import (
 	"context"
+	"go-gin/app/tools"
 
 	"github.com/gin-gonic/gin"
 )
 
-type Response struct {
-	ID          int    `json:"id"`
-	Text        string `json:"text"`
-	Language    string `json:"language"`
-	Order       int    `json:"order"`
-	Description string `json:"description"`
+type Question struct {
+	ID          int    `json:"id,omitempty"`
+	Text        string `json:"text,omitempty"`
+	Language    string `json:"language,omitempty"`
+	Description string `json:"description,omitempty"`
+	Example     string `json:"example,omitempty"`
+	Order       int    `json:"order,omitempty"`
+	CategoryID  int    `json:"category_id,omitempty"`
+}
+
+type QuestionResponse struct {
+	CategoryName string      `json:"category_name,omitempty"`
+	Questions    []*Question `json:"questions,omitempty"`
 }
 
 type Form struct {
@@ -20,27 +28,26 @@ type Form struct {
 	Language    string `json:"language"`
 	Order       int    `json:"order"`
 	Description string `json:"description"`
+	Example     string `json:"example"`
+	Category    int    `json:"category_id"`
 }
 
 type Filter struct {
-	ID       int    `json:"id" form:"id[]"`
-	Order    int    `json:"order"`
-	Language string `json:"language"`
+	ID                    int    `json:"id" form:"id"`
+	Order                 int    `json:"order" form:"order"`
+	Language              string `json:"language" form:"language"`
+	CategoryId            int    `json:"category_id" form:"category_id"`
+	QuestionCategoryOrder int    `json:"question_category_order" form:"question_category_order"`
 }
 
 type QuestionUsecase interface {
-	GetDetail(c *gin.Context) (*Response, error)
+	GetDetail(c *gin.Context) (*Question, error)
 	Create(c *gin.Context) error
-	// GetAllUser(c *gin.Context) ([]*Response, *tools.Pagination, error)
-	// UpdateUser(c *gin.Context) error
-	// DeleteUser(c *gin.Context) error
+	GetAll(c *gin.Context) (*QuestionResponse, *tools.Pagination, error)
 }
 
 type QuestionRepository interface {
-	GetDetail(ctx context.Context, order int, language string) (*Response, error)
+	GetDetail(ctx context.Context, order int, language string) (*Question, error)
 	Create(ctx context.Context, form *Form) error
-	// GetAllUser(ctx context.Context, pagination *tools.Pagination, filter *Filter) ([]*UserResponse, *tools.Pagination, error)
-	// CheckUserIdentifier(ctx context.Context, identifier string) (*UserResponseSensitiveCase, error)
-	// UpdateUser(ctx context.Context, form *UserForm) error
-	// DeleteUser(ctx context.Context, ID uuid.UUID) error
+	GetAll(ctx context.Context, pagination *tools.Pagination, filter *Filter) ([]*Question, *tools.Pagination, error)
 }

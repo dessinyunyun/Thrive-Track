@@ -127,9 +127,9 @@ func (uc *AuthUsecase) Login(c *gin.Context) (*auth.Authenticate, error) {
 
 	result := &auth.Authenticate{
 		User: user,
-		AccessToken: auth.JWT{
-			Token:        signedToken.AccessToken.Token,
-			RefreshToken: signedToken.AccessToken.RefreshToken,
+		Token: auth.Token{
+			AccessToken:  signedToken.Token.AccessToken,
+			RefreshToken: signedToken.Token.RefreshToken,
 		},
 	}
 
@@ -152,6 +152,21 @@ func (uc *AuthUsecase) RefreshToken(c *gin.Context) (*auth.Authenticate, error) 
 	}
 
 	if claims, ok := token.Claims.(*auth.CustomClaims); ok && token.Valid {
+
+		token, err := uc.GetDetailToken(claims.User.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		if token == nil || token.Revoked {
+			return nil, auth.ErrInvalidToken
+		}
+
+		err = uc.repo.RevokedRefreshToken(uc.ctx, claims.User.ID)
+		if err != nil {
+			return nil, err
+		}
+
 		user, err := uc.userRepo.GetDetailUser(uc.ctx, claims.User.ID)
 		if err != nil {
 			return nil, err
@@ -170,9 +185,9 @@ func (uc *AuthUsecase) RefreshToken(c *gin.Context) (*auth.Authenticate, error) 
 
 		result := &auth.Authenticate{
 			User: user,
-			AccessToken: auth.JWT{
-				Token:        signedToken.AccessToken.Token,
-				RefreshToken: signedToken.AccessToken.RefreshToken,
+			Token: auth.Token{
+				AccessToken:  signedToken.Token.AccessToken,
+				RefreshToken: signedToken.Token.RefreshToken,
 			},
 		}
 

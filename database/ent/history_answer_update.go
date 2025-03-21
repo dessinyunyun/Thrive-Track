@@ -9,7 +9,7 @@ import (
 	"go-gin/database/ent/form_response"
 	"go-gin/database/ent/history_answer"
 	"go-gin/database/ent/predicate"
-	"go-gin/database/ent/questions"
+	"go-gin/database/ent/question"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -110,8 +110,8 @@ func (hau *HistoryAnswerUpdate) SetFormResponse(f *Form_Response) *HistoryAnswer
 	return hau.SetFormResponseID(f.ID)
 }
 
-// SetQuestion sets the "question" edge to the Questions entity.
-func (hau *HistoryAnswerUpdate) SetQuestion(q *Questions) *HistoryAnswerUpdate {
+// SetQuestion sets the "question" edge to the Question entity.
+func (hau *HistoryAnswerUpdate) SetQuestion(q *Question) *HistoryAnswerUpdate {
 	return hau.SetQuestionID(q.ID)
 }
 
@@ -126,7 +126,7 @@ func (hau *HistoryAnswerUpdate) ClearFormResponse() *HistoryAnswerUpdate {
 	return hau
 }
 
-// ClearQuestion clears the "question" edge to the Questions entity.
+// ClearQuestion clears the "question" edge to the Question entity.
 func (hau *HistoryAnswerUpdate) ClearQuestion() *HistoryAnswerUpdate {
 	hau.mutation.ClearQuestion()
 	return hau
@@ -258,7 +258,7 @@ func (hau *HistoryAnswerUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Columns: []string{history_answer.QuestionColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(questions.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(question.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -271,7 +271,7 @@ func (hau *HistoryAnswerUpdate) sqlSave(ctx context.Context) (n int, err error) 
 			Columns: []string{history_answer.QuestionColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(questions.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(question.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -379,8 +379,8 @@ func (hauo *HistoryAnswerUpdateOne) SetFormResponse(f *Form_Response) *HistoryAn
 	return hauo.SetFormResponseID(f.ID)
 }
 
-// SetQuestion sets the "question" edge to the Questions entity.
-func (hauo *HistoryAnswerUpdateOne) SetQuestion(q *Questions) *HistoryAnswerUpdateOne {
+// SetQuestion sets the "question" edge to the Question entity.
+func (hauo *HistoryAnswerUpdateOne) SetQuestion(q *Question) *HistoryAnswerUpdateOne {
 	return hauo.SetQuestionID(q.ID)
 }
 
@@ -395,7 +395,7 @@ func (hauo *HistoryAnswerUpdateOne) ClearFormResponse() *HistoryAnswerUpdateOne 
 	return hauo
 }
 
-// ClearQuestion clears the "question" edge to the Questions entity.
+// ClearQuestion clears the "question" edge to the Question entity.
 func (hauo *HistoryAnswerUpdateOne) ClearQuestion() *HistoryAnswerUpdateOne {
 	hauo.mutation.ClearQuestion()
 	return hauo
@@ -557,7 +557,7 @@ func (hauo *HistoryAnswerUpdateOne) sqlSave(ctx context.Context) (_node *History
 			Columns: []string{history_answer.QuestionColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(questions.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(question.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -570,7 +570,7 @@ func (hauo *HistoryAnswerUpdateOne) sqlSave(ctx context.Context) (_node *History
 			Columns: []string{history_answer.QuestionColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(questions.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(question.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

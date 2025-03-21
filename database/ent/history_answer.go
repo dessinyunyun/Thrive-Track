@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"go-gin/database/ent/form_response"
 	"go-gin/database/ent/history_answer"
-	"go-gin/database/ent/questions"
+	"go-gin/database/ent/question"
 	"strings"
 	"time"
 
@@ -42,7 +42,7 @@ type History_AnswerEdges struct {
 	// FormResponse holds the value of the form_response edge.
 	FormResponse *Form_Response `json:"form_response,omitempty"`
 	// Question holds the value of the question edge.
-	Question *Questions `json:"question,omitempty"`
+	Question *Question `json:"question,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [2]bool
@@ -61,11 +61,11 @@ func (e History_AnswerEdges) FormResponseOrErr() (*Form_Response, error) {
 
 // QuestionOrErr returns the Question value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e History_AnswerEdges) QuestionOrErr() (*Questions, error) {
+func (e History_AnswerEdges) QuestionOrErr() (*Question, error) {
 	if e.Question != nil {
 		return e.Question, nil
 	} else if e.loadedTypes[1] {
-		return nil, &NotFoundError{label: questions.Label}
+		return nil, &NotFoundError{label: question.Label}
 	}
 	return nil, &NotLoadedError{edge: "question"}
 }
@@ -156,7 +156,7 @@ func (ha *History_Answer) QueryFormResponse() *FormResponseQuery {
 }
 
 // QueryQuestion queries the "question" edge of the History_Answer entity.
-func (ha *History_Answer) QueryQuestion() *QuestionsQuery {
+func (ha *History_Answer) QueryQuestion() *QuestionQuery {
 	return NewHistoryAnswerClient(ha.config).QueryQuestion(ha)
 }
 

@@ -19,7 +19,7 @@ func (Activation_token) Fields() []ent.Field {
 			Default(uuid.New).
 			Immutable(),
 		field.UUID("user_id", uuid.UUID{}),
-		field.String("token").MaxLen(255).NotEmpty().Unique(),
+		field.String("token").MaxLen(520).NotEmpty().Unique(),
 		field.Bool("isused").Default(false),
 	}
 }

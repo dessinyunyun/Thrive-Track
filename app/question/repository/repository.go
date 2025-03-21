@@ -3,8 +3,9 @@ package repository
 import (
 	"context"
 	"go-gin/app/question"
+	"go-gin/app/tools"
 	"go-gin/database/ent"
-	entQuestion "go-gin/database/ent/questions"
+	entQuestion "go-gin/database/ent/question"
 )
 
 type Repository struct {
@@ -17,9 +18,44 @@ func NewQuestionRepository(db *ent.Client) *Repository {
 	}
 }
 
-func (r *Repository) GetDetail(ctx context.Context, order int, language string) (*question.Response, error) {
+func (r *Repository) GetAll(ctx context.Context, pagination *tools.Pagination, filter *question.Filter) ([]*question.Question, *tools.Pagination, error) {
+	query := r.db.Question.Query().Order(entQuestion.ByOrder())
+	if filter.CategoryId != 0 {
+		query = query.Where(entQuestion.CategoryIDEQ(filter.CategoryId))
+	}
 
-	query := r.db.Questions.Query().
+	// count, _ := query.Count(ctx)
+	// pagination.Count = int(count)
+
+	exec, err := query.Offset(pagination.Offset).Limit(pagination.Limit).All(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	count, _ := query.Count(ctx)
+	pagination.Count = int(count)
+	pagination = tools.Paging(pagination)
+
+	var questions []*question.Question
+
+	for _, v := range exec {
+		questions = append(questions, &question.Question{
+			ID:          v.ID,
+			Text:        v.Text,
+			Language:    v.Language,
+			Order:       v.Order,
+			Example:     v.Example,
+			Description: v.Description,
+			CategoryID:  v.CategoryID,
+		})
+	}
+
+	return questions, pagination, nil
+}
+
+func (r *Repository) GetDetail(ctx context.Context, order int, language string) (*question.Question, error) {
+
+	query := r.db.Question.Query().
 		Where(
 			entQuestion.OrderEQ(order),
 			entQuestion.LanguageEQ(language),
@@ -34,20 +70,21 @@ func (r *Repository) GetDetail(ctx context.Context, order int, language string) 
 		return nil, nil
 	}
 
-	// Ambil data pertama
 	exec, err := query.First(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// Return hasil dalam format yang sesuai
-	return &question.Response{
+	res := &question.Question{
 		ID:          exec.ID,
-		Text:        exec.Text,        // Ganti sesuai dengan nama kolom di entitas Question
-		Language:    exec.Language,    // Ganti sesuai dengan nama kolom di entitas Question
-		Order:       exec.Order,       // Ganti sesuai dengan nama kolom di entitas Question
-		Description: exec.Description, // Ganti sesuai dengan nama kolom di entitas Question
-	}, nil
+		Text:        exec.Text,
+		Language:    exec.Language,
+		Order:       exec.Order,
+		Example:     exec.Example,
+		Description: exec.Description,
+	}
+
+	return res, nil
 }
 
 func (r *Repository) Create(ctx context.Context, form *question.Form) error {
@@ -56,11 +93,13 @@ func (r *Repository) Create(ctx context.Context, form *question.Form) error {
 		return err
 	}
 
-	_, err = tx.Questions.Create().
+	_, err = tx.Question.Create().
 		SetText(form.Text).
 		SetOrder(form.Order).
 		SetLanguage(form.Language).
 		SetDescription(form.Description).
+		SetCategoryID(form.Category).
+		SetExample(form.Example).
 		Save(ctx)
 	if err != nil {
 		tx.Rollback()
@@ -127,36 +166,6 @@ func (r *Repository) Create(ctx context.Context, form *question.Form) error {
 // 	}
 
 // 	return nil
-// }
-
-// func (r *Repository) GetAllUser(ctx context.Context, pagination *tools.Pagination, filter *question.Filter) ([]*question.Response, *tools.Pagination, error) {
-// 	// userQuery := r.db.User.Query().
-// 	// 	Where(
-// 	// 		entQuestion.Order(filter.Email),
-// 	// 	)
-
-// 	// User, err := userQuery.Offset(pagination.Offset).Limit(pagination.Limit).All(ctx)
-// 	// if err != nil {
-// 	// 	return nil, nil, err
-// 	// }
-
-// 	// Pagination
-// 	count, _ := userQuery.Count(ctx)
-// 	pagination.Count = int(count)
-// 	pagination = tools.Paging(pagination)
-
-// 	var users []*user.UserResponse
-
-// 	for _, v := range User {
-// 		users = append(users, &question.Response{
-// 			ID:       v.ID,
-// 			Text:     v.Name,
-// 			Language: v.Username,
-// 			Order:    v.Email,
-// 		})
-// 	}
-
-// 	return users, pagination, nil
 // }
 
 // func (r *UserRepository) CheckUserIdentifier(ctx context.Context, identifier string) (*user.UserResponseSensitiveCase, error) {

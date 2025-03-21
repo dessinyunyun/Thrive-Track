@@ -12,12 +12,12 @@ import (
 	"go-gin/database/ent/migrate"
 
 	"go-gin/database/ent/activation_token"
-	"go-gin/database/ent/category_questions"
 	"go-gin/database/ent/example"
 	"go-gin/database/ent/form_response"
 	"go-gin/database/ent/history_answer"
-	"go-gin/database/ent/questions"
-	"go-gin/database/ent/session"
+	"go-gin/database/ent/question"
+	"go-gin/database/ent/question_category"
+	"go-gin/database/ent/token"
 	"go-gin/database/ent/user"
 
 	"entgo.io/ent"
@@ -34,18 +34,18 @@ type Client struct {
 	Schema *migrate.Schema
 	// Activation_token is the client for interacting with the Activation_token builders.
 	Activation_token *ActivationTokenClient
-	// Category_Questions is the client for interacting with the Category_Questions builders.
-	Category_Questions *CategoryQuestionsClient
 	// Example is the client for interacting with the Example builders.
 	Example *ExampleClient
 	// Form_Response is the client for interacting with the Form_Response builders.
 	Form_Response *FormResponseClient
 	// History_Answer is the client for interacting with the History_Answer builders.
 	History_Answer *HistoryAnswerClient
-	// Questions is the client for interacting with the Questions builders.
-	Questions *QuestionsClient
-	// Session is the client for interacting with the Session builders.
-	Session *SessionClient
+	// Question is the client for interacting with the Question builders.
+	Question *QuestionClient
+	// Question_Category is the client for interacting with the Question_Category builders.
+	Question_Category *QuestionCategoryClient
+	// Token is the client for interacting with the Token builders.
+	Token *TokenClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 }
@@ -60,12 +60,12 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Activation_token = NewActivationTokenClient(c.config)
-	c.Category_Questions = NewCategoryQuestionsClient(c.config)
 	c.Example = NewExampleClient(c.config)
 	c.Form_Response = NewFormResponseClient(c.config)
 	c.History_Answer = NewHistoryAnswerClient(c.config)
-	c.Questions = NewQuestionsClient(c.config)
-	c.Session = NewSessionClient(c.config)
+	c.Question = NewQuestionClient(c.config)
+	c.Question_Category = NewQuestionCategoryClient(c.config)
+	c.Token = NewTokenClient(c.config)
 	c.User = NewUserClient(c.config)
 }
 
@@ -157,16 +157,16 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:                ctx,
-		config:             cfg,
-		Activation_token:   NewActivationTokenClient(cfg),
-		Category_Questions: NewCategoryQuestionsClient(cfg),
-		Example:            NewExampleClient(cfg),
-		Form_Response:      NewFormResponseClient(cfg),
-		History_Answer:     NewHistoryAnswerClient(cfg),
-		Questions:          NewQuestionsClient(cfg),
-		Session:            NewSessionClient(cfg),
-		User:               NewUserClient(cfg),
+		ctx:               ctx,
+		config:            cfg,
+		Activation_token:  NewActivationTokenClient(cfg),
+		Example:           NewExampleClient(cfg),
+		Form_Response:     NewFormResponseClient(cfg),
+		History_Answer:    NewHistoryAnswerClient(cfg),
+		Question:          NewQuestionClient(cfg),
+		Question_Category: NewQuestionCategoryClient(cfg),
+		Token:             NewTokenClient(cfg),
+		User:              NewUserClient(cfg),
 	}, nil
 }
 
@@ -184,16 +184,16 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:                ctx,
-		config:             cfg,
-		Activation_token:   NewActivationTokenClient(cfg),
-		Category_Questions: NewCategoryQuestionsClient(cfg),
-		Example:            NewExampleClient(cfg),
-		Form_Response:      NewFormResponseClient(cfg),
-		History_Answer:     NewHistoryAnswerClient(cfg),
-		Questions:          NewQuestionsClient(cfg),
-		Session:            NewSessionClient(cfg),
-		User:               NewUserClient(cfg),
+		ctx:               ctx,
+		config:            cfg,
+		Activation_token:  NewActivationTokenClient(cfg),
+		Example:           NewExampleClient(cfg),
+		Form_Response:     NewFormResponseClient(cfg),
+		History_Answer:    NewHistoryAnswerClient(cfg),
+		Question:          NewQuestionClient(cfg),
+		Question_Category: NewQuestionCategoryClient(cfg),
+		Token:             NewTokenClient(cfg),
+		User:              NewUserClient(cfg),
 	}, nil
 }
 
@@ -223,8 +223,8 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.Activation_token, c.Category_Questions, c.Example, c.Form_Response,
-		c.History_Answer, c.Questions, c.Session, c.User,
+		c.Activation_token, c.Example, c.Form_Response, c.History_Answer, c.Question,
+		c.Question_Category, c.Token, c.User,
 	} {
 		n.Use(hooks...)
 	}
@@ -234,8 +234,8 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.Activation_token, c.Category_Questions, c.Example, c.Form_Response,
-		c.History_Answer, c.Questions, c.Session, c.User,
+		c.Activation_token, c.Example, c.Form_Response, c.History_Answer, c.Question,
+		c.Question_Category, c.Token, c.User,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -246,18 +246,18 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
 	case *ActivationTokenMutation:
 		return c.Activation_token.mutate(ctx, m)
-	case *CategoryQuestionsMutation:
-		return c.Category_Questions.mutate(ctx, m)
 	case *ExampleMutation:
 		return c.Example.mutate(ctx, m)
 	case *FormResponseMutation:
 		return c.Form_Response.mutate(ctx, m)
 	case *HistoryAnswerMutation:
 		return c.History_Answer.mutate(ctx, m)
-	case *QuestionsMutation:
-		return c.Questions.mutate(ctx, m)
-	case *SessionMutation:
-		return c.Session.mutate(ctx, m)
+	case *QuestionMutation:
+		return c.Question.mutate(ctx, m)
+	case *QuestionCategoryMutation:
+		return c.Question_Category.mutate(ctx, m)
+	case *TokenMutation:
+		return c.Token.mutate(ctx, m)
 	case *UserMutation:
 		return c.User.mutate(ctx, m)
 	default:
@@ -411,139 +411,6 @@ func (c *ActivationTokenClient) mutate(ctx context.Context, m *ActivationTokenMu
 		return (&ActivationTokenDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Activation_token mutation op: %q", m.Op())
-	}
-}
-
-// CategoryQuestionsClient is a client for the Category_Questions schema.
-type CategoryQuestionsClient struct {
-	config
-}
-
-// NewCategoryQuestionsClient returns a client for the Category_Questions from the given config.
-func NewCategoryQuestionsClient(c config) *CategoryQuestionsClient {
-	return &CategoryQuestionsClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `category_questions.Hooks(f(g(h())))`.
-func (c *CategoryQuestionsClient) Use(hooks ...Hook) {
-	c.hooks.Category_Questions = append(c.hooks.Category_Questions, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `category_questions.Intercept(f(g(h())))`.
-func (c *CategoryQuestionsClient) Intercept(interceptors ...Interceptor) {
-	c.inters.Category_Questions = append(c.inters.Category_Questions, interceptors...)
-}
-
-// Create returns a builder for creating a Category_Questions entity.
-func (c *CategoryQuestionsClient) Create() *CategoryQuestionsCreate {
-	mutation := newCategoryQuestionsMutation(c.config, OpCreate)
-	return &CategoryQuestionsCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of Category_Questions entities.
-func (c *CategoryQuestionsClient) CreateBulk(builders ...*CategoryQuestionsCreate) *CategoryQuestionsCreateBulk {
-	return &CategoryQuestionsCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *CategoryQuestionsClient) MapCreateBulk(slice any, setFunc func(*CategoryQuestionsCreate, int)) *CategoryQuestionsCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &CategoryQuestionsCreateBulk{err: fmt.Errorf("calling to CategoryQuestionsClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*CategoryQuestionsCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &CategoryQuestionsCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for Category_Questions.
-func (c *CategoryQuestionsClient) Update() *CategoryQuestionsUpdate {
-	mutation := newCategoryQuestionsMutation(c.config, OpUpdate)
-	return &CategoryQuestionsUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *CategoryQuestionsClient) UpdateOne(cq *Category_Questions) *CategoryQuestionsUpdateOne {
-	mutation := newCategoryQuestionsMutation(c.config, OpUpdateOne, withCategory_Questions(cq))
-	return &CategoryQuestionsUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *CategoryQuestionsClient) UpdateOneID(id int) *CategoryQuestionsUpdateOne {
-	mutation := newCategoryQuestionsMutation(c.config, OpUpdateOne, withCategory_QuestionsID(id))
-	return &CategoryQuestionsUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for Category_Questions.
-func (c *CategoryQuestionsClient) Delete() *CategoryQuestionsDelete {
-	mutation := newCategoryQuestionsMutation(c.config, OpDelete)
-	return &CategoryQuestionsDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *CategoryQuestionsClient) DeleteOne(cq *Category_Questions) *CategoryQuestionsDeleteOne {
-	return c.DeleteOneID(cq.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *CategoryQuestionsClient) DeleteOneID(id int) *CategoryQuestionsDeleteOne {
-	builder := c.Delete().Where(category_questions.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &CategoryQuestionsDeleteOne{builder}
-}
-
-// Query returns a query builder for Category_Questions.
-func (c *CategoryQuestionsClient) Query() *CategoryQuestionsQuery {
-	return &CategoryQuestionsQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeCategoryQuestions},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a Category_Questions entity by its id.
-func (c *CategoryQuestionsClient) Get(ctx context.Context, id int) (*Category_Questions, error) {
-	return c.Query().Where(category_questions.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *CategoryQuestionsClient) GetX(ctx context.Context, id int) *Category_Questions {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// Hooks returns the client hooks.
-func (c *CategoryQuestionsClient) Hooks() []Hook {
-	return c.hooks.Category_Questions
-}
-
-// Interceptors returns the client interceptors.
-func (c *CategoryQuestionsClient) Interceptors() []Interceptor {
-	return c.inters.Category_Questions
-}
-
-func (c *CategoryQuestionsClient) mutate(ctx context.Context, m *CategoryQuestionsMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&CategoryQuestionsCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&CategoryQuestionsUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&CategoryQuestionsUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&CategoryQuestionsDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown Category_Questions mutation op: %q", m.Op())
 	}
 }
 
@@ -970,13 +837,13 @@ func (c *HistoryAnswerClient) QueryFormResponse(ha *History_Answer) *FormRespons
 }
 
 // QueryQuestion queries the question edge of a History_Answer.
-func (c *HistoryAnswerClient) QueryQuestion(ha *History_Answer) *QuestionsQuery {
-	query := (&QuestionsClient{config: c.config}).Query()
+func (c *HistoryAnswerClient) QueryQuestion(ha *History_Answer) *QuestionQuery {
+	query := (&QuestionClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := ha.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(history_answer.Table, history_answer.FieldID, id),
-			sqlgraph.To(questions.Table, questions.FieldID),
+			sqlgraph.To(question.Table, question.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, history_answer.QuestionTable, history_answer.QuestionColumn),
 		)
 		fromV = sqlgraph.Neighbors(ha.driver.Dialect(), step)
@@ -1010,107 +877,107 @@ func (c *HistoryAnswerClient) mutate(ctx context.Context, m *HistoryAnswerMutati
 	}
 }
 
-// QuestionsClient is a client for the Questions schema.
-type QuestionsClient struct {
+// QuestionClient is a client for the Question schema.
+type QuestionClient struct {
 	config
 }
 
-// NewQuestionsClient returns a client for the Questions from the given config.
-func NewQuestionsClient(c config) *QuestionsClient {
-	return &QuestionsClient{config: c}
+// NewQuestionClient returns a client for the Question from the given config.
+func NewQuestionClient(c config) *QuestionClient {
+	return &QuestionClient{config: c}
 }
 
 // Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `questions.Hooks(f(g(h())))`.
-func (c *QuestionsClient) Use(hooks ...Hook) {
-	c.hooks.Questions = append(c.hooks.Questions, hooks...)
+// A call to `Use(f, g, h)` equals to `question.Hooks(f(g(h())))`.
+func (c *QuestionClient) Use(hooks ...Hook) {
+	c.hooks.Question = append(c.hooks.Question, hooks...)
 }
 
 // Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `questions.Intercept(f(g(h())))`.
-func (c *QuestionsClient) Intercept(interceptors ...Interceptor) {
-	c.inters.Questions = append(c.inters.Questions, interceptors...)
+// A call to `Intercept(f, g, h)` equals to `question.Intercept(f(g(h())))`.
+func (c *QuestionClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Question = append(c.inters.Question, interceptors...)
 }
 
-// Create returns a builder for creating a Questions entity.
-func (c *QuestionsClient) Create() *QuestionsCreate {
-	mutation := newQuestionsMutation(c.config, OpCreate)
-	return &QuestionsCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Create returns a builder for creating a Question entity.
+func (c *QuestionClient) Create() *QuestionCreate {
+	mutation := newQuestionMutation(c.config, OpCreate)
+	return &QuestionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// CreateBulk returns a builder for creating a bulk of Questions entities.
-func (c *QuestionsClient) CreateBulk(builders ...*QuestionsCreate) *QuestionsCreateBulk {
-	return &QuestionsCreateBulk{config: c.config, builders: builders}
+// CreateBulk returns a builder for creating a bulk of Question entities.
+func (c *QuestionClient) CreateBulk(builders ...*QuestionCreate) *QuestionCreateBulk {
+	return &QuestionCreateBulk{config: c.config, builders: builders}
 }
 
 // MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
 // a builder and applies setFunc on it.
-func (c *QuestionsClient) MapCreateBulk(slice any, setFunc func(*QuestionsCreate, int)) *QuestionsCreateBulk {
+func (c *QuestionClient) MapCreateBulk(slice any, setFunc func(*QuestionCreate, int)) *QuestionCreateBulk {
 	rv := reflect.ValueOf(slice)
 	if rv.Kind() != reflect.Slice {
-		return &QuestionsCreateBulk{err: fmt.Errorf("calling to QuestionsClient.MapCreateBulk with wrong type %T, need slice", slice)}
+		return &QuestionCreateBulk{err: fmt.Errorf("calling to QuestionClient.MapCreateBulk with wrong type %T, need slice", slice)}
 	}
-	builders := make([]*QuestionsCreate, rv.Len())
+	builders := make([]*QuestionCreate, rv.Len())
 	for i := 0; i < rv.Len(); i++ {
 		builders[i] = c.Create()
 		setFunc(builders[i], i)
 	}
-	return &QuestionsCreateBulk{config: c.config, builders: builders}
+	return &QuestionCreateBulk{config: c.config, builders: builders}
 }
 
-// Update returns an update builder for Questions.
-func (c *QuestionsClient) Update() *QuestionsUpdate {
-	mutation := newQuestionsMutation(c.config, OpUpdate)
-	return &QuestionsUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Update returns an update builder for Question.
+func (c *QuestionClient) Update() *QuestionUpdate {
+	mutation := newQuestionMutation(c.config, OpUpdate)
+	return &QuestionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *QuestionsClient) UpdateOne(q *Questions) *QuestionsUpdateOne {
-	mutation := newQuestionsMutation(c.config, OpUpdateOne, withQuestions(q))
-	return &QuestionsUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *QuestionClient) UpdateOne(q *Question) *QuestionUpdateOne {
+	mutation := newQuestionMutation(c.config, OpUpdateOne, withQuestion(q))
+	return &QuestionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *QuestionsClient) UpdateOneID(id int) *QuestionsUpdateOne {
-	mutation := newQuestionsMutation(c.config, OpUpdateOne, withQuestionsID(id))
-	return &QuestionsUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *QuestionClient) UpdateOneID(id int) *QuestionUpdateOne {
+	mutation := newQuestionMutation(c.config, OpUpdateOne, withQuestionID(id))
+	return &QuestionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// Delete returns a delete builder for Questions.
-func (c *QuestionsClient) Delete() *QuestionsDelete {
-	mutation := newQuestionsMutation(c.config, OpDelete)
-	return &QuestionsDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Delete returns a delete builder for Question.
+func (c *QuestionClient) Delete() *QuestionDelete {
+	mutation := newQuestionMutation(c.config, OpDelete)
+	return &QuestionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *QuestionsClient) DeleteOne(q *Questions) *QuestionsDeleteOne {
+func (c *QuestionClient) DeleteOne(q *Question) *QuestionDeleteOne {
 	return c.DeleteOneID(q.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *QuestionsClient) DeleteOneID(id int) *QuestionsDeleteOne {
-	builder := c.Delete().Where(questions.ID(id))
+func (c *QuestionClient) DeleteOneID(id int) *QuestionDeleteOne {
+	builder := c.Delete().Where(question.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
-	return &QuestionsDeleteOne{builder}
+	return &QuestionDeleteOne{builder}
 }
 
-// Query returns a query builder for Questions.
-func (c *QuestionsClient) Query() *QuestionsQuery {
-	return &QuestionsQuery{
+// Query returns a query builder for Question.
+func (c *QuestionClient) Query() *QuestionQuery {
+	return &QuestionQuery{
 		config: c.config,
-		ctx:    &QueryContext{Type: TypeQuestions},
+		ctx:    &QueryContext{Type: TypeQuestion},
 		inters: c.Interceptors(),
 	}
 }
 
-// Get returns a Questions entity by its id.
-func (c *QuestionsClient) Get(ctx context.Context, id int) (*Questions, error) {
-	return c.Query().Where(questions.ID(id)).Only(ctx)
+// Get returns a Question entity by its id.
+func (c *QuestionClient) Get(ctx context.Context, id int) (*Question, error) {
+	return c.Query().Where(question.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *QuestionsClient) GetX(ctx context.Context, id int) *Questions {
+func (c *QuestionClient) GetX(ctx context.Context, id int) *Question {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -1118,15 +985,31 @@ func (c *QuestionsClient) GetX(ctx context.Context, id int) *Questions {
 	return obj
 }
 
-// QueryHistoryAnswers queries the history_answers edge of a Questions.
-func (c *QuestionsClient) QueryHistoryAnswers(q *Questions) *HistoryAnswerQuery {
+// QueryHistoryAnswers queries the history_answers edge of a Question.
+func (c *QuestionClient) QueryHistoryAnswers(q *Question) *HistoryAnswerQuery {
 	query := (&HistoryAnswerClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := q.ID
 		step := sqlgraph.NewStep(
-			sqlgraph.From(questions.Table, questions.FieldID, id),
+			sqlgraph.From(question.Table, question.FieldID, id),
 			sqlgraph.To(history_answer.Table, history_answer.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, questions.HistoryAnswersTable, questions.HistoryAnswersColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, question.HistoryAnswersTable, question.HistoryAnswersColumn),
+		)
+		fromV = sqlgraph.Neighbors(q.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryCategory queries the category edge of a Question.
+func (c *QuestionClient) QueryCategory(q *Question) *QuestionCategoryQuery {
+	query := (&QuestionCategoryClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := q.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(question.Table, question.FieldID, id),
+			sqlgraph.To(question_category.Table, question_category.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, question.CategoryTable, question.CategoryColumn),
 		)
 		fromV = sqlgraph.Neighbors(q.driver.Dialect(), step)
 		return fromV, nil
@@ -1135,131 +1018,131 @@ func (c *QuestionsClient) QueryHistoryAnswers(q *Questions) *HistoryAnswerQuery 
 }
 
 // Hooks returns the client hooks.
-func (c *QuestionsClient) Hooks() []Hook {
-	return c.hooks.Questions
+func (c *QuestionClient) Hooks() []Hook {
+	return c.hooks.Question
 }
 
 // Interceptors returns the client interceptors.
-func (c *QuestionsClient) Interceptors() []Interceptor {
-	return c.inters.Questions
+func (c *QuestionClient) Interceptors() []Interceptor {
+	return c.inters.Question
 }
 
-func (c *QuestionsClient) mutate(ctx context.Context, m *QuestionsMutation) (Value, error) {
+func (c *QuestionClient) mutate(ctx context.Context, m *QuestionMutation) (Value, error) {
 	switch m.Op() {
 	case OpCreate:
-		return (&QuestionsCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&QuestionCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdate:
-		return (&QuestionsUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&QuestionUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdateOne:
-		return (&QuestionsUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&QuestionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpDelete, OpDeleteOne:
-		return (&QuestionsDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+		return (&QuestionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
-		return nil, fmt.Errorf("ent: unknown Questions mutation op: %q", m.Op())
+		return nil, fmt.Errorf("ent: unknown Question mutation op: %q", m.Op())
 	}
 }
 
-// SessionClient is a client for the Session schema.
-type SessionClient struct {
+// QuestionCategoryClient is a client for the Question_Category schema.
+type QuestionCategoryClient struct {
 	config
 }
 
-// NewSessionClient returns a client for the Session from the given config.
-func NewSessionClient(c config) *SessionClient {
-	return &SessionClient{config: c}
+// NewQuestionCategoryClient returns a client for the Question_Category from the given config.
+func NewQuestionCategoryClient(c config) *QuestionCategoryClient {
+	return &QuestionCategoryClient{config: c}
 }
 
 // Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `session.Hooks(f(g(h())))`.
-func (c *SessionClient) Use(hooks ...Hook) {
-	c.hooks.Session = append(c.hooks.Session, hooks...)
+// A call to `Use(f, g, h)` equals to `question_category.Hooks(f(g(h())))`.
+func (c *QuestionCategoryClient) Use(hooks ...Hook) {
+	c.hooks.Question_Category = append(c.hooks.Question_Category, hooks...)
 }
 
 // Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `session.Intercept(f(g(h())))`.
-func (c *SessionClient) Intercept(interceptors ...Interceptor) {
-	c.inters.Session = append(c.inters.Session, interceptors...)
+// A call to `Intercept(f, g, h)` equals to `question_category.Intercept(f(g(h())))`.
+func (c *QuestionCategoryClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Question_Category = append(c.inters.Question_Category, interceptors...)
 }
 
-// Create returns a builder for creating a Session entity.
-func (c *SessionClient) Create() *SessionCreate {
-	mutation := newSessionMutation(c.config, OpCreate)
-	return &SessionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Create returns a builder for creating a Question_Category entity.
+func (c *QuestionCategoryClient) Create() *QuestionCategoryCreate {
+	mutation := newQuestionCategoryMutation(c.config, OpCreate)
+	return &QuestionCategoryCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// CreateBulk returns a builder for creating a bulk of Session entities.
-func (c *SessionClient) CreateBulk(builders ...*SessionCreate) *SessionCreateBulk {
-	return &SessionCreateBulk{config: c.config, builders: builders}
+// CreateBulk returns a builder for creating a bulk of Question_Category entities.
+func (c *QuestionCategoryClient) CreateBulk(builders ...*QuestionCategoryCreate) *QuestionCategoryCreateBulk {
+	return &QuestionCategoryCreateBulk{config: c.config, builders: builders}
 }
 
 // MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
 // a builder and applies setFunc on it.
-func (c *SessionClient) MapCreateBulk(slice any, setFunc func(*SessionCreate, int)) *SessionCreateBulk {
+func (c *QuestionCategoryClient) MapCreateBulk(slice any, setFunc func(*QuestionCategoryCreate, int)) *QuestionCategoryCreateBulk {
 	rv := reflect.ValueOf(slice)
 	if rv.Kind() != reflect.Slice {
-		return &SessionCreateBulk{err: fmt.Errorf("calling to SessionClient.MapCreateBulk with wrong type %T, need slice", slice)}
+		return &QuestionCategoryCreateBulk{err: fmt.Errorf("calling to QuestionCategoryClient.MapCreateBulk with wrong type %T, need slice", slice)}
 	}
-	builders := make([]*SessionCreate, rv.Len())
+	builders := make([]*QuestionCategoryCreate, rv.Len())
 	for i := 0; i < rv.Len(); i++ {
 		builders[i] = c.Create()
 		setFunc(builders[i], i)
 	}
-	return &SessionCreateBulk{config: c.config, builders: builders}
+	return &QuestionCategoryCreateBulk{config: c.config, builders: builders}
 }
 
-// Update returns an update builder for Session.
-func (c *SessionClient) Update() *SessionUpdate {
-	mutation := newSessionMutation(c.config, OpUpdate)
-	return &SessionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Update returns an update builder for Question_Category.
+func (c *QuestionCategoryClient) Update() *QuestionCategoryUpdate {
+	mutation := newQuestionCategoryMutation(c.config, OpUpdate)
+	return &QuestionCategoryUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *SessionClient) UpdateOne(s *Session) *SessionUpdateOne {
-	mutation := newSessionMutation(c.config, OpUpdateOne, withSession(s))
-	return &SessionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *QuestionCategoryClient) UpdateOne(qc *Question_Category) *QuestionCategoryUpdateOne {
+	mutation := newQuestionCategoryMutation(c.config, OpUpdateOne, withQuestion_Category(qc))
+	return &QuestionCategoryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *SessionClient) UpdateOneID(id uuid.UUID) *SessionUpdateOne {
-	mutation := newSessionMutation(c.config, OpUpdateOne, withSessionID(id))
-	return &SessionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *QuestionCategoryClient) UpdateOneID(id int) *QuestionCategoryUpdateOne {
+	mutation := newQuestionCategoryMutation(c.config, OpUpdateOne, withQuestion_CategoryID(id))
+	return &QuestionCategoryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// Delete returns a delete builder for Session.
-func (c *SessionClient) Delete() *SessionDelete {
-	mutation := newSessionMutation(c.config, OpDelete)
-	return &SessionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Delete returns a delete builder for Question_Category.
+func (c *QuestionCategoryClient) Delete() *QuestionCategoryDelete {
+	mutation := newQuestionCategoryMutation(c.config, OpDelete)
+	return &QuestionCategoryDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *SessionClient) DeleteOne(s *Session) *SessionDeleteOne {
-	return c.DeleteOneID(s.ID)
+func (c *QuestionCategoryClient) DeleteOne(qc *Question_Category) *QuestionCategoryDeleteOne {
+	return c.DeleteOneID(qc.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *SessionClient) DeleteOneID(id uuid.UUID) *SessionDeleteOne {
-	builder := c.Delete().Where(session.ID(id))
+func (c *QuestionCategoryClient) DeleteOneID(id int) *QuestionCategoryDeleteOne {
+	builder := c.Delete().Where(question_category.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
-	return &SessionDeleteOne{builder}
+	return &QuestionCategoryDeleteOne{builder}
 }
 
-// Query returns a query builder for Session.
-func (c *SessionClient) Query() *SessionQuery {
-	return &SessionQuery{
+// Query returns a query builder for Question_Category.
+func (c *QuestionCategoryClient) Query() *QuestionCategoryQuery {
+	return &QuestionCategoryQuery{
 		config: c.config,
-		ctx:    &QueryContext{Type: TypeSession},
+		ctx:    &QueryContext{Type: TypeQuestionCategory},
 		inters: c.Interceptors(),
 	}
 }
 
-// Get returns a Session entity by its id.
-func (c *SessionClient) Get(ctx context.Context, id uuid.UUID) (*Session, error) {
-	return c.Query().Where(session.ID(id)).Only(ctx)
+// Get returns a Question_Category entity by its id.
+func (c *QuestionCategoryClient) Get(ctx context.Context, id int) (*Question_Category, error) {
+	return c.Query().Where(question_category.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *SessionClient) GetX(ctx context.Context, id uuid.UUID) *Session {
+func (c *QuestionCategoryClient) GetX(ctx context.Context, id int) *Question_Category {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -1267,44 +1150,193 @@ func (c *SessionClient) GetX(ctx context.Context, id uuid.UUID) *Session {
 	return obj
 }
 
-// QueryUser queries the user edge of a Session.
-func (c *SessionClient) QueryUser(s *Session) *UserQuery {
-	query := (&UserClient{config: c.config}).Query()
+// QueryQuestions queries the questions edge of a Question_Category.
+func (c *QuestionCategoryClient) QueryQuestions(qc *Question_Category) *QuestionQuery {
+	query := (&QuestionClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := s.ID
+		id := qc.ID
 		step := sqlgraph.NewStep(
-			sqlgraph.From(session.Table, session.FieldID, id),
-			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, true, session.UserTable, session.UserColumn),
+			sqlgraph.From(question_category.Table, question_category.FieldID, id),
+			sqlgraph.To(question.Table, question.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, question_category.QuestionsTable, question_category.QuestionsColumn),
 		)
-		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		fromV = sqlgraph.Neighbors(qc.driver.Dialect(), step)
 		return fromV, nil
 	}
 	return query
 }
 
 // Hooks returns the client hooks.
-func (c *SessionClient) Hooks() []Hook {
-	return c.hooks.Session
+func (c *QuestionCategoryClient) Hooks() []Hook {
+	return c.hooks.Question_Category
 }
 
 // Interceptors returns the client interceptors.
-func (c *SessionClient) Interceptors() []Interceptor {
-	return c.inters.Session
+func (c *QuestionCategoryClient) Interceptors() []Interceptor {
+	return c.inters.Question_Category
 }
 
-func (c *SessionClient) mutate(ctx context.Context, m *SessionMutation) (Value, error) {
+func (c *QuestionCategoryClient) mutate(ctx context.Context, m *QuestionCategoryMutation) (Value, error) {
 	switch m.Op() {
 	case OpCreate:
-		return (&SessionCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&QuestionCategoryCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdate:
-		return (&SessionUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&QuestionCategoryUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdateOne:
-		return (&SessionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&QuestionCategoryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpDelete, OpDeleteOne:
-		return (&SessionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+		return (&QuestionCategoryDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
-		return nil, fmt.Errorf("ent: unknown Session mutation op: %q", m.Op())
+		return nil, fmt.Errorf("ent: unknown Question_Category mutation op: %q", m.Op())
+	}
+}
+
+// TokenClient is a client for the Token schema.
+type TokenClient struct {
+	config
+}
+
+// NewTokenClient returns a client for the Token from the given config.
+func NewTokenClient(c config) *TokenClient {
+	return &TokenClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `token.Hooks(f(g(h())))`.
+func (c *TokenClient) Use(hooks ...Hook) {
+	c.hooks.Token = append(c.hooks.Token, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `token.Intercept(f(g(h())))`.
+func (c *TokenClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Token = append(c.inters.Token, interceptors...)
+}
+
+// Create returns a builder for creating a Token entity.
+func (c *TokenClient) Create() *TokenCreate {
+	mutation := newTokenMutation(c.config, OpCreate)
+	return &TokenCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Token entities.
+func (c *TokenClient) CreateBulk(builders ...*TokenCreate) *TokenCreateBulk {
+	return &TokenCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *TokenClient) MapCreateBulk(slice any, setFunc func(*TokenCreate, int)) *TokenCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &TokenCreateBulk{err: fmt.Errorf("calling to TokenClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*TokenCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &TokenCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Token.
+func (c *TokenClient) Update() *TokenUpdate {
+	mutation := newTokenMutation(c.config, OpUpdate)
+	return &TokenUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TokenClient) UpdateOne(t *Token) *TokenUpdateOne {
+	mutation := newTokenMutation(c.config, OpUpdateOne, withToken(t))
+	return &TokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TokenClient) UpdateOneID(id uuid.UUID) *TokenUpdateOne {
+	mutation := newTokenMutation(c.config, OpUpdateOne, withTokenID(id))
+	return &TokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Token.
+func (c *TokenClient) Delete() *TokenDelete {
+	mutation := newTokenMutation(c.config, OpDelete)
+	return &TokenDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *TokenClient) DeleteOne(t *Token) *TokenDeleteOne {
+	return c.DeleteOneID(t.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *TokenClient) DeleteOneID(id uuid.UUID) *TokenDeleteOne {
+	builder := c.Delete().Where(token.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TokenDeleteOne{builder}
+}
+
+// Query returns a query builder for Token.
+func (c *TokenClient) Query() *TokenQuery {
+	return &TokenQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeToken},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Token entity by its id.
+func (c *TokenClient) Get(ctx context.Context, id uuid.UUID) (*Token, error) {
+	return c.Query().Where(token.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TokenClient) GetX(ctx context.Context, id uuid.UUID) *Token {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUser queries the user edge of a Token.
+func (c *TokenClient) QueryUser(t *Token) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := t.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(token.Table, token.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, token.UserTable, token.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(t.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *TokenClient) Hooks() []Hook {
+	return c.hooks.Token
+}
+
+// Interceptors returns the client interceptors.
+func (c *TokenClient) Interceptors() []Interceptor {
+	return c.inters.Token
+}
+
+func (c *TokenClient) mutate(ctx context.Context, m *TokenMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&TokenCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&TokenUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&TokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&TokenDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Token mutation op: %q", m.Op())
 	}
 }
 
@@ -1448,15 +1480,15 @@ func (c *UserClient) QueryActivationTokens(u *User) *ActivationTokenQuery {
 	return query
 }
 
-// QuerySessions queries the sessions edge of a User.
-func (c *UserClient) QuerySessions(u *User) *SessionQuery {
-	query := (&SessionClient{config: c.config}).Query()
+// QueryTokens queries the tokens edge of a User.
+func (c *UserClient) QueryTokens(u *User) *TokenQuery {
+	query := (&TokenClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := u.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(user.Table, user.FieldID, id),
-			sqlgraph.To(session.Table, session.FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, false, user.SessionsTable, user.SessionsColumn),
+			sqlgraph.To(token.Table, token.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.TokensTable, user.TokensColumn),
 		)
 		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
 		return fromV, nil
@@ -1492,11 +1524,11 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Activation_token, Category_Questions, Example, Form_Response, History_Answer,
-		Questions, Session, User []ent.Hook
+		Activation_token, Example, Form_Response, History_Answer, Question,
+		Question_Category, Token, User []ent.Hook
 	}
 	inters struct {
-		Activation_token, Category_Questions, Example, Form_Response, History_Answer,
-		Questions, Session, User []ent.Interceptor
+		Activation_token, Example, Form_Response, History_Answer, Question,
+		Question_Category, Token, User []ent.Interceptor
 	}
 )
