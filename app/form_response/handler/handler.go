@@ -28,6 +28,17 @@ func FormResponseRoute(uc form_response.FormResponseUsecase, r *gin.RouterGroup,
 
 }
 
+// @Tags Form Response
+// @Summary Get All Form Response
+// @Description Get All Form Response
+// @Router /form-response [get]
+// @Accept json
+// @Produce json
+// @param id query array false "ID in Array"
+// @param user_id query string false "Filter by user id"
+// @param username query string false "Filter by Username"
+// @param limit query integer false "Limit of pagination"
+// @param page query integer false "Page of pagination"
 func (h *Handler) GetAll(c *gin.Context) {
 	var filter form_response.Filter
 
@@ -54,6 +65,13 @@ func (h *Handler) GetAll(c *gin.Context) {
 	})
 }
 
+// @Tags Form Response
+// @Summary Get Detail Form Response
+// @Description Get Detail Form Response by ID
+// @Router /form-response/{id} [get]
+// @Accept json
+// @Produce json
+// @param id path string true "ID"
 func (h *Handler) GetDetail(c *gin.Context) {
 	result, err := h.uc.GetDetail(c)
 	if err != nil {
@@ -71,6 +89,13 @@ func (h *Handler) GetDetail(c *gin.Context) {
 	})
 }
 
+// @Tags Form Response
+// @Summary Create Form Response
+// @Description Create Form Response
+// @Router /form-response [post]
+// @Accept json
+// @Produce json
+// @Param request body form_response.Form true "Payload Body for Create [RAW]"
 func (h *Handler) Create(c *gin.Context) {
 	err := h.uc.Create(c)
 	if err != nil {

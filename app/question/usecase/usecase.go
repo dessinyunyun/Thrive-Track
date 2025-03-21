@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"go-gin/app/question"
 	"go-gin/app/question_categories"
@@ -41,6 +42,10 @@ func (uc *Usecase) GetAll(c *gin.Context) (*question.QuestionResponse, *tools.Pa
 		return nil, nil, err
 	}
 
+	if categoryQuestion == nil {
+		return nil, nil, question.ErrQuestionCategoryNotFound
+	}
+
 	filter.CategoryId = categoryQuestion.ID
 
 	result, pagination, err := uc.repo.GetAll(uc.ctx, pagination, &filter)
@@ -66,6 +71,10 @@ func (uc *Usecase) GetDetail(c *gin.Context) (*question.Question, error) {
 	result, err := uc.repo.GetDetail(uc.ctx, orderInt, language)
 	if err != nil {
 		return nil, err
+	}
+
+	if result == nil {
+		return nil, errors.New("question not found")
 	}
 
 	return result, nil

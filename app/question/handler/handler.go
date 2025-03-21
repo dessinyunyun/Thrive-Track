@@ -28,13 +28,25 @@ func QuestionRoute(uc question.QuestionUsecase, r *gin.RouterGroup, log *logrus.
 
 }
 
+// @Tags Question
+// @Summary Get All Question
+// @Description Get All Question
+// @Router /question [get]
+// @Accept json
+// @Produce json
+// @param id query array false "ID in Array"
+// @param order query string false "Filter by order"
+// @param language query string false "Filter by language"
+// @param category_id query string false "Filter by category_id"
+// @param limit query integer false "Limit of pagination"
+// @param page query integer false "Page of pagination"
 func (h *Handler) GetAll(c *gin.Context) {
 	result, pagination, err := h.uc.GetAll(c)
 	if err != nil {
-		h.log.Errorf("get detail Question handlers: %v", err)
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"message": err,
-		})
+		if err != nil {
+			question.ErrorHandler(c, h.log, err)
+			return
+		}
 		return
 	}
 
@@ -46,13 +58,21 @@ func (h *Handler) GetAll(c *gin.Context) {
 	})
 }
 
+// @Tags Question
+// @Summary Get Detail Question
+// @Description Get Detail Question by language and order. lang(en/id)
+// @Router /question/{language}/{order} [get]
+// @Accept json
+// @Produce json
+// @param language path string true "language (en or id)"
+// @param order path string true "order"
 func (h *Handler) GetDetail(c *gin.Context) {
 	result, err := h.uc.GetDetail(c)
 	if err != nil {
-		h.log.Errorf("get detail Question handlers: %v", err)
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"message": err,
-		})
+		if err != nil {
+			question.ErrorHandler(c, h.log, err)
+			return
+		}
 		return
 	}
 
@@ -63,13 +83,20 @@ func (h *Handler) GetDetail(c *gin.Context) {
 	})
 }
 
+// @Tags Question
+// @Summary Create Question
+// @Description Create Question
+// @Router /Question [post]
+// @Accept json
+// @Produce json
+// @Param request body question.Form true "Payload Body for Create [RAW]"
 func (h *Handler) Create(c *gin.Context) {
 	err := h.uc.Create(c)
 	if err != nil {
-		h.log.Errorf("create Question handlers: %v", err)
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"message": err,
-		})
+		if err != nil {
+			question.ErrorHandler(c, h.log, err)
+			return
+		}
 		return
 	}
 

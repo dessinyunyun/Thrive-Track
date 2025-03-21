@@ -4,6 +4,33 @@
         "contact": {}
     },
     "paths": {
+        "/Question": {
+            "post": {
+                "description": "Create Question",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Question"
+                ],
+                "summary": "Create Question",
+                "parameters": [
+                    {
+                        "description": "Payload Body for Create [RAW]",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/question.Form"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/auth/activated-client": {
             "patch": {
                 "description": "ActivatedClient with token",
@@ -282,6 +309,190 @@
                 "responses": {}
             }
         },
+        "/form-response": {
+            "get": {
+                "description": "Get All Form Response",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Form Response"
+                ],
+                "summary": "Get All Form Response",
+                "parameters": [
+                    {
+                        "type": "array",
+                        "description": "ID in Array",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by user id",
+                        "name": "user_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by Username",
+                        "name": "username",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit of pagination",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page of pagination",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            },
+            "post": {
+                "description": "Create Form Response",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Form Response"
+                ],
+                "summary": "Create Form Response",
+                "parameters": [
+                    {
+                        "description": "Payload Body for Create [RAW]",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/form_response.Form"
+                        }
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/form-response/{id}": {
+            "get": {
+                "description": "Get Detail Form Response by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Form Response"
+                ],
+                "summary": "Get Detail Form Response",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/question": {
+            "get": {
+                "description": "Get All Question",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Question"
+                ],
+                "summary": "Get All Question",
+                "parameters": [
+                    {
+                        "type": "array",
+                        "description": "ID in Array",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by order",
+                        "name": "order",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by language",
+                        "name": "language",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by category_id",
+                        "name": "category_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit of pagination",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page of pagination",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
+            }
+        },
+        "/question/{language}/{order}": {
+            "get": {
+                "description": "Get Detail Question by language and order. lang(en/id)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Question"
+                ],
+                "summary": "Get Detail Question",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "language (eng or id)",
+                        "name": "language",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "order",
+                        "name": "order",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
+        },
         "/user": {
             "get": {
                 "description": "Get All Example",
@@ -524,6 +735,46 @@
                     "type": "string"
                 },
                 "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "form_response.Form": {
+            "type": "object",
+            "properties": {
+                "depression_level": {
+                    "type": "string"
+                },
+                "total_score": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "question.Form": {
+            "type": "object",
+            "properties": {
+                "category_id": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "example": {
+                    "type": "string"
+                },
+                "language": {
+                    "type": "string"
+                },
+                "order": {
+                    "type": "integer"
+                },
+                "text": {
                     "type": "string"
                 }
             }

@@ -29,49 +29,13 @@ func CategoryQuestionRoute(uc question_categories.Usecase, r *gin.RouterGroup, l
 
 }
 
-// func (h *Handler) GetAll(c *gin.Context) {
-// 	var filter history_answer.Filter
-
-// 	if err := c.ShouldBindQuery(&filter); err != nil {
-// 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-// 			"message": "Invalid query parameters: " + err.Error(),
-// 		})
-// 		return
-// 	}
-
-// 	result, pagination, err := h.uc.GetAll(c, &filter)
-// 	if err != nil {
-// 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-// 			"message": err.Error(),
-// 		})
-// 		return
-// 	}
-
-// 	c.JSON(http.StatusOK, gin.H{
-// 		"data":    result,
-// 		"status":  "success",
-// 		"message": "Get All History Answer",
-// 		"meta":    pagination,
-// 	})
-// }
-
-// func (h *Handler) GetDetail(c *gin.Context) {
-// 	result, err := h.uc.GetDetail(c)
-// 	if err != nil {
-// 		h.log.Errorf("get detail History Answer handlers: %v", err)
-// 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-// 			"message": err,
-// 		})
-// 		return
-// 	}
-
-// 	c.JSON(http.StatusOK, tools.Response{
-// 		Data:    result,
-// 		Status:  "success",
-// 		Message: "Get Detail History Answer",
-// 	})
-// }
-
+// @Tags Question Category
+// @Summary Create Question Category
+// @Description Create Question Category
+// @Router /category-question [post]
+// @Accept json
+// @Produce json
+// @Param request body question_categories.Form true "Payload Body for Create [RAW]"
 func (h *Handler) Create(c *gin.Context) {
 	err := h.uc.Create(c)
 	if err != nil {

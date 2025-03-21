@@ -51,6 +51,32 @@ definitions:
     - name
     - username
     type: object
+  form_response.Form:
+    properties:
+      depression_level:
+        type: string
+      total_score:
+        type: integer
+      user_id:
+        type: string
+      username:
+        type: string
+    type: object
+  question.Form:
+    properties:
+      category_id:
+        type: integer
+      description:
+        type: string
+      example:
+        type: string
+      language:
+        type: string
+      order:
+        type: integer
+      text:
+        type: string
+    type: object
   user.UserForm:
     properties:
       email:
@@ -70,6 +96,24 @@ definitions:
 info:
   contact: {}
 paths:
+  /Question:
+    post:
+      consumes:
+      - application/json
+      description: Create Question
+      parameters:
+      - description: Payload Body for Create [RAW]
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/question.Form'
+      produces:
+      - application/json
+      responses: {}
+      summary: Create Question
+      tags:
+      - Question
   /auth/activated-client:
     patch:
       consumes:
@@ -257,6 +301,130 @@ paths:
       summary: Update Example
       tags:
       - Example
+  /form-response:
+    get:
+      consumes:
+      - application/json
+      description: Get All Form Response
+      parameters:
+      - description: ID in Array
+        in: query
+        name: id
+        type: array
+      - description: Filter by user id
+        in: query
+        name: user_id
+        type: string
+      - description: Filter by Username
+        in: query
+        name: username
+        type: string
+      - description: Limit of pagination
+        in: query
+        name: limit
+        type: integer
+      - description: Page of pagination
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: Get All Form Response
+      tags:
+      - Form Response
+    post:
+      consumes:
+      - application/json
+      description: Create Form Response
+      parameters:
+      - description: Payload Body for Create [RAW]
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/form_response.Form'
+      produces:
+      - application/json
+      responses: {}
+      summary: Create Form Response
+      tags:
+      - Form Response
+  /form-response/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get Detail Form Response by ID
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Get Detail Form Response
+      tags:
+      - Form Response
+  /question:
+    get:
+      consumes:
+      - application/json
+      description: Get All Question
+      parameters:
+      - description: ID in Array
+        in: query
+        name: id
+        type: array
+      - description: Filter by order
+        in: query
+        name: order
+        type: string
+      - description: Filter by language
+        in: query
+        name: language
+        type: string
+      - description: Filter by category_id
+        in: query
+        name: category_id
+        type: string
+      - description: Limit of pagination
+        in: query
+        name: limit
+        type: integer
+      - description: Page of pagination
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      summary: Get All Question
+      tags:
+      - Question
+  /question/{language}/{order}:
+    get:
+      consumes:
+      - application/json
+      description: Get Detail Question by language and order. lang(en/id)
+      parameters:
+      - description: language (eng or id)
+        in: path
+        name: language
+        required: true
+        type: string
+      - description: order
+        in: path
+        name: order
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      summary: Get Detail Question
+      tags:
+      - Question
   /user:
     get:
       consumes:

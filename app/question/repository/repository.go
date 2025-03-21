@@ -24,9 +24,6 @@ func (r *Repository) GetAll(ctx context.Context, pagination *tools.Pagination, f
 		query = query.Where(entQuestion.CategoryIDEQ(filter.CategoryId))
 	}
 
-	// count, _ := query.Count(ctx)
-	// pagination.Count = int(count)
-
 	exec, err := query.Offset(pagination.Offset).Limit(pagination.Limit).All(ctx)
 	if err != nil {
 		return nil, nil, err
@@ -61,11 +58,11 @@ func (r *Repository) GetDetail(ctx context.Context, order int, language string) 
 			entQuestion.LanguageEQ(language),
 		)
 
-	// Periksa apakah data ada
 	count, err := query.Count(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	if count == 0 {
 		return nil, nil
 	}
