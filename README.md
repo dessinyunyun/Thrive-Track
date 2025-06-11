@@ -1,5 +1,7 @@
 # How to running :
 
+aa
+
 - in root project
 - cmd: go run .
 
